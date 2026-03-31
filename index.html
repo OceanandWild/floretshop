@@ -1,0 +1,3445 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floret Shop - Tienda</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+    <style>
+        :root {
+            --pri: #8B5CF6;
+            --pri-d: #7C3AED;
+            --pri-l: #A78BFA;
+            --glow: rgba(139, 92, 246, 0.4);
+            --bg: #0F0A1A;
+            --card: rgba(30, 20, 50, 0.9);
+            --txt: #F8F5FF;
+            --muted: #A89EC8;
+            --pink: #EC4899;
+            --green: #10B981;
+            --warn: #F59E0B
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--txt);
+            min-height: 100vh;
+            overflow-x: hidden
+        }
+
+        #flowers {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        #app {
+            position: relative;
+            z-index: 1
+        }
+
+        .header {
+            position: sticky;
+            top: 0;
+            background: rgba(15, 10, 26, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+            z-index: 100
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--pri), var(--pink));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .hdr-btns {
+            display: flex;
+            gap: 10px
+        }
+
+        .hdr-btn {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: var(--txt);
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: .9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: .3s;
+            white-space: nowrap;
+            flex-shrink: 0
+        }
+
+        .hdr-btn:hover {
+            background: var(--pri);
+            border-color: var(--pri);
+            transform: translateY(-2px)
+        }
+
+        .quota-text {
+            display: inline-block;
+        }
+
+        @media(max-width: 600px) {
+            .header {
+                padding: 10px 12px;
+            }
+
+            .logo span {
+                display: none;
+            }
+
+            .hdr-btns {
+                gap: 6px;
+            }
+
+            .hdr-btn {
+                padding: 8px 10px;
+                font-size: .8rem;
+            }
+
+            .quota-label {
+                display: none;
+            }
+        }
+
+        .cart-btn {
+            position: relative
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--pink);
+            font-size: .7rem;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto
+        }
+
+        .title {
+            font-size: 1.6rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .title i {
+            color: var(--pri)
+        }
+
+        .catalog-meta {
+            margin-top: -6px;
+            margin-bottom: 14px;
+            color: var(--muted);
+            font-size: 0.84rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .sync-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-size: 0.75rem;
+            color: #d8c9ff;
+        }
+
+        .catalog-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .catalog-control {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(139, 92, 246, 0.22);
+            border-radius: 12px;
+            color: var(--txt);
+            padding: 10px 11px;
+            font-size: 0.86rem;
+            outline: none;
+        }
+
+        .catalog-control:focus {
+            border-color: var(--pri);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.18);
+        }
+
+        .seller-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .seller-stat-card {
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .seller-stat-card b {
+            display: block;
+            font-size: 1.1rem;
+            margin-top: 4px;
+        }
+
+        .order-line {
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .order-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            padding: 2px 10px;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #d8c9ff;
+        }
+
+        @media(max-width:640px) {
+            .catalog-controls {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .seller-stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .order-line {
+                padding: 9px;
+            }
+
+            .order-line .btn {
+                max-width: 100% !important;
+            }
+        }
+
+        .swipe {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 16px;
+            padding-bottom: 16px;
+            -webkit-overflow-scrolling: touch
+        }
+
+        .swipe::-webkit-scrollbar {
+            display: none
+        }
+
+        .card {
+            flex: 0 0 calc(100vw - 50px);
+            scroll-snap-align: center;
+            background: var(--card);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            transition: .4s
+        }
+
+        @media(min-width:768px) {
+            .swipe {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                overflow: visible
+            }
+
+            .card {
+                flex: none
+            }
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 8px 30px var(--glow);
+            border-color: var(--pri)
+        }
+
+        .card-img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1))
+        }
+
+        .badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 600;
+            text-transform: uppercase
+        }
+
+        .badge-new {
+            background: var(--green);
+            color: #fff
+        }
+
+        .badge-used {
+            background: var(--warn);
+            color: #1a1a1a
+        }
+
+        .card-body {
+            padding: 16px
+        }
+
+        .card-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 6px
+        }
+
+        .card-desc {
+            font-size: .85rem;
+            color: var(--muted);
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden
+        }
+
+        .card-price {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--pri);
+            margin-bottom: 12px
+        }
+
+        .card-btns {
+            display: flex;
+            gap: 8px
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: .3s
+        }
+
+        .btn-p {
+            background: linear-gradient(135deg, var(--pri), var(--pri-d));
+            color: #fff
+        }
+
+        .btn-p:hover {
+            box-shadow: 0 4px 15px var(--glow)
+        }
+
+        .btn-s {
+            background: transparent;
+            border: 1px solid var(--pri);
+            color: var(--pri)
+        }
+
+        .btn-s:hover {
+            background: var(--pri);
+            color: #fff
+        }
+
+        .modal-bg {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: .3s
+        }
+
+        .modal-bg.on {
+            opacity: 1;
+            visibility: visible
+        }
+
+        .modal {
+            background: var(--card);
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 85vh;
+            /* Flex layout para separar header/body/footer */
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            transform: scale(.9);
+            transition: .3s;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-bg.on .modal {
+            transform: scale(1)
+        }
+
+        .modal-hd {
+            padding: 16px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .modal-hd h3 {
+            font-size: 1.2rem
+        }
+
+        .modal-cl {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.4rem;
+            cursor: pointer
+        }
+
+        .modal-cl:hover {
+            color: var(--pink)
+        }
+
+        .modal-bd {
+            padding: 16px;
+            overflow-y: auto;
+            /* Scroll aquí */
+            flex: 1;
+            /* Ocupa el espacio restante */
+            min-height: 0;
+            /* Fix para Firefox flex items */
+        }
+
+        .frm-grp {
+            margin-bottom: 14px
+        }
+
+        .frm-lbl {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500
+        }
+
+        .frm-inp,
+        .frm-sel,
+        .frm-txt {
+            width: 100%;
+            padding: 12px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            color: var(--txt);
+            font-family: inherit;
+            transition: .3s
+        }
+
+        .frm-inp:focus,
+        .frm-sel:focus,
+        .frm-txt:focus {
+            outline: none;
+            border-color: var(--pri);
+            box-shadow: 0 0 0 3px var(--glow)
+        }
+
+        .frm-txt {
+            min-height: 80px;
+            resize: vertical
+        }
+
+        .cart-panel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            max-width: 380px;
+            height: 100vh;
+            background: var(--card);
+            border-left: 1px solid rgba(139, 92, 246, 0.3);
+            z-index: 200;
+            transition: .4s;
+            display: flex;
+            flex-direction: column
+        }
+
+        .cart-panel.on {
+            right: 0
+        }
+
+        .cart-hd {
+            padding: 16px;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px
+        }
+
+        .cart-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 10px;
+            margin-bottom: 10px
+        }
+
+        .cart-item img {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            object-fit: cover
+        }
+
+        .cart-item-info {
+            flex: 1
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            font-size: .9rem
+        }
+
+        .cart-item-price {
+            color: var(--pri);
+            font-weight: 700
+        }
+
+        .cart-item-rm {
+            background: none;
+            border: none;
+            color: var(--pink);
+            cursor: pointer;
+            font-size: 1.1rem
+        }
+
+        .cart-ft {
+            padding: 16px;
+            border-top: 1px solid rgba(139, 92, 246, 0.2)
+        }
+
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 12px
+        }
+
+        .cart-total span:last-child {
+            color: var(--pri)
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 14px 20px;
+            background: var(--card);
+            border: 1px solid var(--green);
+            border-radius: 10px;
+            z-index: 3000;
+            transform: translateX(150%);
+            transition: .4s;
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .toast.show {
+            transform: translateX(0)
+        }
+
+        .admin-fab {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, var(--pri), var(--pink));
+            color: #fff;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 50px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px var(--glow);
+            z-index: 100
+        }
+
+        .admin-fab:hover {
+            transform: scale(1.05)
+        }
+
+        .fly-cart {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 3.5rem;
+            opacity: 0;
+            z-index: 2000;
+            transition: .5s
+        }
+
+        .fly-cart.on {
+            opacity: 1;
+            animation: bounce .5s
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(-50%) scale(1)
+            }
+
+            50% {
+                transform: translateY(-50%) scale(1.2)
+            }
+        }
+
+        .fly-ball {
+            position: fixed;
+            width: 18px;
+            height: 18px;
+            background: var(--pink);
+            border-radius: 50%;
+            z-index: 2001;
+            box-shadow: 0 0 15px var(--pink)
+        }
+
+        .empty {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--muted)
+        }
+
+        .empty i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: .5
+        }
+
+        .size-sel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px
+        }
+
+        .size-btn {
+            padding: 6px 14px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--txt);
+            cursor: pointer;
+            transition: .3s
+        }
+
+        .size-btn:hover,
+        .size-btn.on {
+            background: var(--pri);
+            border-color: var(--pri)
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 16px
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-family: inherit;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: .3s
+        }
+
+        .auth-tab.on {
+            color: var(--pri);
+            border-color: var(--pri)
+        }
+
+        .auth-hint {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: -6px;
+            margin-bottom: 10px;
+        }
+
+        .auth-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 8px;
+            margin-bottom: 10px;
+        }
+
+        .auth-check {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .auth-link-btn {
+            border: none;
+            background: transparent;
+            color: var(--pri);
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.82rem;
+            padding: 0;
+        }
+
+        .auth-link-btn:hover {
+            text-decoration: underline;
+        }
+
+        .pass-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 0 10px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .pass-wrap .frm-inp {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .pass-toggle {
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0;
+        }
+
+        .pass-toggle:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .cart-panel {
+                max-width: 100%;
+                width: 100%;
+                /* Ajuste crítico para móviles: altura dinámica real */
+                height: 100%;
+                height: -webkit-fill-available;
+            }
+
+            .cart-ft {
+                /* Asegurar que el botón se destaque y tenga espacio abajo (para barras de inicio de iPhone) */
+                padding-bottom: max(16px, env(safe-area-inset-bottom));
+                background: var(--bg);
+                /* Fondo sólido para que no se mezcle */
+                box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+                /* Sombra para separar visualmente */
+            }
+
+            .cart-items {
+                /* Espacio extra abajo para que no choque */
+                padding-bottom: 20px;
+            }
+
+            /* MODAL EN MÓVIL: Estilo Bottom Sheet */
+            .modal-bg {
+                align-items: flex-end;
+                /* Pegar al fondo */
+                padding: 0;
+                /* Sin padding externo para pegar */
+            }
+
+            .modal {
+                border-radius: 20px 20px 0 0;
+                /* Redondo solo arriba */
+                max-height: 90vh;
+                /* Ocupar casi toda la pantalla */
+                width: 100%;
+                margin: 0;
+                transform: translateY(100%);
+                /* Animación desde abajo */
+            }
+
+            .modal-bg.on .modal {
+                transform: translateY(0);
+            }
+        }
+
+        .gallery {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px
+        }
+
+        .gallery img {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: .3s
+        }
+
+        .gallery img:hover,
+        .gallery img.on {
+            border-color: var(--pri)
+        }
+
+        .main-img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 10px
+        }
+
+        /* Checkout Styles */
+        .checkout-steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: .8rem;
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--muted);
+            transition: .3s
+        }
+
+        .step.active {
+            background: var(--pri);
+            color: #fff
+        }
+
+        .step.done {
+            background: var(--green);
+            color: #fff
+        }
+
+        .step-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: .75rem
+        }
+
+        .checkout-summary {
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: .9rem
+        }
+
+        .summary-item:last-child {
+            margin-bottom: 0;
+            padding-top: 8px;
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+            font-weight: 700;
+            font-size: 1.1rem
+        }
+
+        .card-input-group {
+            display: grid;
+            grid-template-columns: 1fr 80px 80px;
+            gap: 10px
+        }
+
+        .card-preview {
+            background: linear-gradient(135deg, var(--pri), var(--pri-d));
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+            color: #fff;
+            position: relative;
+            min-height: 160px
+        }
+
+        .card-chip {
+            width: 40px;
+            height: 30px;
+            background: linear-gradient(135deg, #f0d78c, #a88539);
+            border-radius: 6px;
+            margin-bottom: 20px
+        }
+
+        .card-number {
+            font-size: 1.3rem;
+            letter-spacing: 3px;
+            font-family: monospace;
+            margin-bottom: 20px
+        }
+
+        .card-bottom {
+            display: flex;
+            justify-content: space-between
+        }
+
+        .card-label {
+            font-size: .65rem;
+            opacity: .7;
+            text-transform: uppercase;
+            margin-bottom: 3px
+        }
+
+        .card-value {
+            font-size: .9rem;
+            font-weight: 600
+        }
+
+        .card-brand {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2rem
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            font-size: .8rem;
+            color: var(--green);
+            margin-top: 12px
+        }
+
+        .payment-methods {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px
+        }
+
+        .pay-method {
+            flex: 1;
+            padding: 12px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: .3s
+        }
+
+        .pay-method:hover,
+        .pay-method.active {
+            border-color: var(--pri);
+            background: rgba(139, 92, 246, 0.2)
+        }
+
+        .pay-method i {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+            color: var(--pri)
+        }
+
+        .pay-method span {
+            display: block;
+            font-size: .75rem;
+            color: var(--muted)
+        }
+
+        .processing-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: .3s
+        }
+
+        .processing-overlay.on {
+            opacity: 1;
+            visibility: visible
+        }
+
+        .processing-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(139, 92, 246, 0.3);
+            border-top-color: var(--pri);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .success-check {
+            width: 80px;
+            height: 80px;
+            background: var(--green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            animation: scaleIn .5s ease
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0)
+            }
+
+            to {
+                transform: scale(1)
+            }
+        }
+
+        /* Mobile Responsive Enhancements */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px 12px;
+            }
+
+            .title {
+                font-size: 1.4rem;
+                margin-left: 4px;
+            }
+
+            /* Product Grid 2-Columns */
+            .swipe {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                padding-bottom: 0;
+                overflow: visible;
+                scroll-snap-type: none;
+            }
+
+            .card {
+                flex: none;
+                width: 100%;
+                border-radius: 12px;
+            }
+
+            .card-img {
+                aspect-ratio: 1/1;
+                /* Cuadrado en móvil es más moderno */
+            }
+
+            .card-body {
+                padding: 12px;
+            }
+
+            .card-name {
+                font-size: 0.95rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .card-desc {
+                font-size: 0.75rem;
+                margin-bottom: 8px;
+                display: none;
+                /* Ocultar desc en grid móvil para limpieza */
+            }
+
+            .card-price {
+                font-size: 1.1rem;
+                margin-bottom: 10px;
+            }
+
+            .card-btns {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .btn {
+                padding: 8px;
+                font-size: 0.85rem;
+            }
+
+            /* Cart Panel Mobile */
+            .cart-panel {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            /* Modals Mobile (Bottom Sheet Style) */
+            .modal {
+                max-width: 100%;
+                width: 100%;
+                border-radius: 20px 20px 0 0;
+                margin: 0;
+                position: fixed;
+                bottom: 0;
+                transform: translateY(100%);
+                border-bottom: none;
+                max-height: 90vh;
+            }
+
+            .modal-bg {
+                padding: 0;
+                align-items: flex-end;
+            }
+
+            .modal-bg.on .modal {
+                transform: translateY(0);
+            }
+
+            /* Header adjustments */
+            .header {
+                padding: 12px 16px;
+            }
+
+            .logo {
+                font-size: 1.1rem;
+            }
+
+            .hdr-btn span {
+                display: none;
+                /* Hide username/text on mobile to save space */
+            }
+
+            .hdr-btn i {
+                font-size: 1.1rem;
+            }
+
+            .hdr-btn {
+                padding: 8px 12px;
+            }
+
+            /* Toast padding */
+            .toast {
+                left: 20px;
+                right: 20px;
+                bottom: 80px;
+                /* Arriba del posible bottom bar si hubiera */
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        /* Stock & Sold Out */
+        .stock-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff
+        }
+
+        .stock-low {
+            background: var(--warn);
+            color: #1a1a1a
+        }
+
+        .card.sold-out {
+            opacity: 0.6;
+            pointer-events: none
+        }
+
+        .card.sold-out::after {
+            content: 'AGOTADO';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            background: var(--pink);
+            color: #fff;
+            padding: 10px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 8px;
+            z-index: 10
+        }
+
+        /* Profile Styles */
+        .profile-header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--pri), var(--pri-d));
+            border-radius: 12px;
+            margin-bottom: 16px
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 12px
+        }
+
+        .profile-name {
+            font-size: 1.3rem;
+            font-weight: 700
+        }
+
+        .profile-email {
+            font-size: .85rem;
+            opacity: .8
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px
+        }
+
+        .profile-stat {
+            background: rgba(139, 92, 246, 0.1);
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center
+        }
+
+        .profile-stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--pri)
+        }
+
+        .profile-stat-label {
+            font-size: .75rem;
+            color: var(--muted)
+        }
+
+        .profile-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .profile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid transparent;
+            border-radius: 10px;
+            color: var(--txt);
+            cursor: pointer;
+            transition: .3s;
+            font-family: inherit;
+            font-size: .95rem;
+            text-align: left
+        }
+
+        .profile-menu-item:hover {
+            border-color: var(--pri);
+            background: rgba(139, 92, 246, 0.2)
+        }
+
+        .profile-menu-item i {
+            width: 24px;
+            color: var(--pri)
+        }
+
+        .profile-menu-item.danger {
+            color: var(--pink)
+        }
+
+        .profile-menu-item.danger i {
+            color: var(--pink)
+        }
+
+        .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0 12px;
+            color: #f7d56b;
+            font-size: 0.88rem;
+            flex-wrap: wrap;
+        }
+
+        .rating-row small {
+            color: var(--muted);
+        }
+
+        .rating-pill {
+            background: rgba(16, 185, 129, 0.14);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #9df8d5;
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .review-card {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.22);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .review-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+
+        .review-head strong {
+            font-size: 0.92rem;
+            color: #f1ebff;
+        }
+
+        .review-date {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .review-stars {
+            color: #f7d56b;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .review-comment {
+            color: #ddd3f8;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .review-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .review-box {
+            background: rgba(14, 10, 24, 0.82);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .review-box h4 {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: #f2edff;
+        }
+
+        .notif-item {
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            background: rgba(139, 92, 246, 0.08);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: .25s;
+        }
+
+        .notif-item:hover {
+            border-color: var(--pri);
+            transform: translateY(-2px);
+        }
+
+        .notif-item.unread {
+            border-color: rgba(236, 72, 153, 0.45);
+            background: rgba(236, 72, 153, 0.12);
+        }
+
+        .notif-title {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .notif-title strong {
+            font-size: 0.92rem;
+        }
+
+        .notif-chip {
+            font-size: 0.68rem;
+            border-radius: 999px;
+            padding: 3px 7px;
+            background: rgba(139, 92, 246, 0.24);
+            border: 1px solid rgba(139, 92, 246, 0.36);
+            color: #d8c8ff;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .notif-msg {
+            font-size: 0.84rem;
+            color: #e5ddfa;
+            margin-bottom: 5px;
+        }
+
+        .notif-date {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        .review-compose {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .star-picker {
+            display: flex;
+            gap: 7px;
+            font-size: 1.2rem;
+            color: #7f7698;
+        }
+
+        .star-picker i {
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .star-picker i.on {
+            color: #f7d56b;
+            text-shadow: 0 0 12px rgba(247, 213, 107, 0.45);
+        }
+
+        .notif-badge {
+            background: var(--pink);
+            color: #fff;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            min-width: 19px;
+            height: 19px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+            margin-left: 6px;
+        }
+
+        @media(max-width: 768px) {
+            .card-btns {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .card-body {
+                padding: 13px;
+            }
+
+            .modal {
+                max-height: 92vh;
+            }
+
+            .review-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .rating-row {
+                font-size: 0.82rem;
+            }
+
+            .notif-title strong {
+                font-size: 0.85rem;
+            }
+
+            .notif-msg {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="flowers"></canvas>
+    <div id="app"></div>
+
+    <script>
+        const mp = new MercadoPago('APP_USR-60b879df-a71d-40eb-9366-f018d03cd83a', { locale: 'es-UY' }); // PRODUCCIÓN
+        // const mp = new MercadoPago('TEST-6fa2a1c5-2d99-4fb5-8b73-9fafc9d8f50a', { locale: 'es-UY' }); // PRUEBA
+
+        // ========== CONFIG ==========
+        const API = 'https://owsdatabase.onrender.com';
+        const WA_NUM1 = '59898725223'; // Ajustado sin el 0 extra si es internacional (+598 98...)
+        const WA_NUM2 = '59893994250';
+
+        // ========== STATE ==========
+        function safeParseJSON(value, fallback = null) {
+            try { return value ? JSON.parse(value) : fallback; } catch (_) { return fallback; }
+        }
+        function saveAuthUser(nextUser, remember = true) {
+            const payload = nextUser ? JSON.stringify(nextUser) : '';
+            if (!nextUser) {
+                localStorage.removeItem('floret_user');
+                sessionStorage.removeItem('floret_user');
+                return;
+            }
+            if (remember) {
+                localStorage.setItem('floret_user', payload);
+                sessionStorage.removeItem('floret_user');
+            } else {
+                sessionStorage.setItem('floret_user', payload);
+                localStorage.removeItem('floret_user');
+            }
+        }
+
+        let user = safeParseJSON(localStorage.getItem('floret_user')) || safeParseJSON(sessionStorage.getItem('floret_user')) || null;
+        let cart = JSON.parse(localStorage.getItem('floret_cart')) || [];
+        let products = [];
+        let isAdmin = user ? user.is_admin : false;
+        let quota = null;
+        let catalogLastSync = null;
+        let catalogSyncState = 'idle';
+        let catalogSyncError = '';
+        const FLORET_MAIN_SELLER_EMAIL = 'karatedojor@gmail.com';
+        let productReviewsCache = {};
+        let sellerReviewsCache = null;
+        let allReviewsCache = null;
+        let malevoNotifications = [];
+        let malevoUnreadCount = 0;
+        let filteredProducts = [];
+        let catalogFilters = {
+            query: '',
+            condition: 'all',
+            stock: 'all',
+            minPrice: '',
+            maxPrice: '',
+            sort: 'recent'
+        };
+        let sellerDashboardCache = null;
+        let sellerOrdersCache = [];
+        let sellerOrdersStatusFilter = 'all';
+
+        async function loadQuota() {
+            if (!user || user.power_level !== 1) return;
+            try {
+                const res = await fetch(`${API}/floret/quota/${user.id}`);
+                quota = await res.json();
+                render();
+            } catch (e) {
+                console.error("Error cargando cuota:", e);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatStars(rating = 0) {
+            const safeRating = Math.max(0, Math.min(5, Number(rating) || 0));
+            const full = Math.round(safeRating);
+            let html = '';
+            for (let i = 1; i <= 5; i++) {
+                html += `<i class="fas fa-star" style="opacity:${i <= full ? 1 : 0.28}"></i>`;
+            }
+            return html;
+        }
+
+        function isMalevoSession() {
+            if (!user) return false;
+            const email = String(user.email || '').trim().toLowerCase();
+            const username = String(user.username || '').trim().toLowerCase();
+            return email === FLORET_MAIN_SELLER_EMAIL || username === 'malevo' || Number(user.power_level || 0) >= 1;
+        }
+
+        function formatDateTime(dateValue) {
+            try {
+                return new Date(dateValue).toLocaleString();
+            } catch (_e) {
+                return String(dateValue || '');
+            }
+        }
+
+        async function loadProductReviews(productId, force = false) {
+            const safeId = Number(productId);
+            if (!safeId) return { summary: { count: 0, avgRating: 0 }, reviews: [] };
+            if (!force && productReviewsCache[safeId]) return productReviewsCache[safeId];
+            const res = await fetch(`${API}/floret/reviews/product/${safeId}`, { cache: 'no-store' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudieron cargar reviews');
+            productReviewsCache[safeId] = data;
+            return data;
+        }
+
+        async function loadSellerReviews(force = false) {
+            if (!force && sellerReviewsCache) return sellerReviewsCache;
+            const res = await fetch(`${API}/floret/reviews/seller?sellerEmail=${encodeURIComponent(FLORET_MAIN_SELLER_EMAIL)}`, { cache: 'no-store' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudieron cargar reviews de vendedor');
+            sellerReviewsCache = data;
+            return data;
+        }
+
+        async function loadAllReviews(force = false) {
+            if (!user || !isMalevoSession()) throw new Error('Acceso restringido');
+            if (!force && allReviewsCache) return allReviewsCache;
+            const res = await fetch(`${API}/floret/reviews/all?userId=${encodeURIComponent(user.id)}&email=${encodeURIComponent(user.email || '')}`, { cache: 'no-store' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudo cargar centro de reviews');
+            allReviewsCache = data;
+            return data;
+        }
+
+        async function loadMalevoNotifications(force = false) {
+            if (!user || !isMalevoSession()) return { notifications: [], unreadCount: 0 };
+            if (!force && malevoNotifications.length > 0) {
+                return { notifications: malevoNotifications, unreadCount: malevoUnreadCount };
+            }
+            const res = await fetch(`${API}/floret/notifications?userId=${encodeURIComponent(user.id)}&email=${encodeURIComponent(user.email || '')}`, { cache: 'no-store' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudieron cargar notificaciones');
+            malevoNotifications = Array.isArray(data.notifications) ? data.notifications : [];
+            malevoUnreadCount = Number(data.unreadCount || 0);
+            return { notifications: malevoNotifications, unreadCount: malevoUnreadCount };
+        }
+
+        function normalizeCatalogNumber(value) {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function applyCatalogFilters(options = {}) {
+            const { rerender = true } = options;
+            const query = String(catalogFilters.query || '').trim().toLowerCase();
+            const minPrice = normalizeCatalogNumber(catalogFilters.minPrice);
+            const maxPrice = normalizeCatalogNumber(catalogFilters.maxPrice);
+
+            filteredProducts = products.filter((product) => {
+                const conditionOk = catalogFilters.condition === 'all' || String(product.condition || '').toLowerCase() === catalogFilters.condition;
+                const stockValue = Number(product.stock || 0);
+                const stockOk =
+                    catalogFilters.stock === 'all' ||
+                    (catalogFilters.stock === 'in' && stockValue > 0) ||
+                    (catalogFilters.stock === 'low' && stockValue > 0 && stockValue <= 4) ||
+                    (catalogFilters.stock === 'out' && stockValue <= 0);
+                const queryOk = !query || [product.name, product.description, product.condition]
+                    .map((v) => String(v || '').toLowerCase())
+                    .some((v) => v.includes(query));
+                const minOk = minPrice === null || Number(product.price || 0) >= minPrice;
+                const maxOk = maxPrice === null || Number(product.price || 0) <= maxPrice;
+                return conditionOk && stockOk && queryOk && minOk && maxOk;
+            });
+
+            const sortMode = String(catalogFilters.sort || 'recent');
+            filteredProducts.sort((a, b) => {
+                if (sortMode === 'price-asc') return Number(a.price || 0) - Number(b.price || 0);
+                if (sortMode === 'price-desc') return Number(b.price || 0) - Number(a.price || 0);
+                if (sortMode === 'stock-desc') return Number(b.stock || 0) - Number(a.stock || 0);
+                if (sortMode === 'rating-desc') return Number((b.reviewSummary || {}).avgRating || 0) - Number((a.reviewSummary || {}).avgRating || 0);
+                return Number(b.id || 0) - Number(a.id || 0);
+            });
+
+            if (rerender) {
+                renderProducts();
+            }
+
+            const summary = document.getElementById('catalog-results');
+            if (summary) {
+                summary.textContent = `${filteredProducts.length} resultados de ${products.length}`;
+            }
+        }
+
+        function updateCatalogFilter(field, value) {
+            catalogFilters[field] = value;
+            applyCatalogFilters({ rerender: true });
+        }
+
+        async function loadSellerDashboard(force = false) {
+            if (!user || !isMalevoSession()) throw new Error('Solo perfiles de venta autorizados');
+            if (!force && sellerDashboardCache) return sellerDashboardCache;
+            const res = await fetch(`${API}/floret/seller/dashboard?userId=${encodeURIComponent(user.id)}&email=${encodeURIComponent(user.email || '')}`, { cache: 'no-store' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudo cargar el dashboard');
+            sellerDashboardCache = data;
+            return data;
+        }
+
+        async function loadSellerOrders(force = false) {
+            if (!user || !isMalevoSession()) throw new Error('Solo perfiles de venta autorizados');
+            if (!force && sellerOrdersCache.length) return sellerOrdersCache;
+            const statusParam = sellerOrdersStatusFilter !== 'all' ? `&status=${encodeURIComponent(sellerOrdersStatusFilter)}` : '';
+            const res = await fetch(`${API}/floret/seller/orders?userId=${encodeURIComponent(user.id)}&email=${encodeURIComponent(user.email || '')}${statusParam}&limit=120`, { cache: 'no-store' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudieron cargar ordenes');
+            sellerOrdersCache = Array.isArray(data.orders) ? data.orders : [];
+            return sellerOrdersCache;
+        }
+
+        // ========== FLOWERS CANVAS ==========
+        const canvas = document.getElementById('flowers');
+        const ctx = canvas.getContext('2d');
+        let flowers = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function createFlower(x, y) {
+            return {
+                x, y,
+                size: Math.random() * 20 + 15,
+                petals: Math.floor(Math.random() * 3) + 5,
+                color: `hsla(${270 + Math.random() * 40}, 70%, 60%, ${Math.random() * 0.3 + 0.1})`,
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.01
+            };
+        }
+
+        function initFlowers() {
+            flowers = [];
+            for (let i = 0; i < 25; i++) {
+                flowers.push(createFlower(Math.random() * canvas.width, Math.random() * canvas.height));
+            }
+        }
+
+        function drawFlower(f) {
+            ctx.save();
+            ctx.translate(f.x, f.y);
+            ctx.rotate(f.rotation);
+            ctx.fillStyle = f.color;
+            for (let i = 0; i < f.petals; i++) {
+                ctx.beginPath();
+                ctx.ellipse(0, -f.size * 0.6, f.size * 0.3, f.size * 0.6, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.rotate((Math.PI * 2) / f.petals);
+            }
+            ctx.beginPath();
+            ctx.arc(0, 0, f.size * 0.25, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(45, 80%, 60%, 0.5)`;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function animateFlowers() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            flowers.forEach(f => {
+                f.rotation += f.rotSpeed;
+                drawFlower(f);
+            });
+            requestAnimationFrame(animateFlowers);
+        }
+
+        // ========== RENDER ==========
+        function render() {
+            const app = document.getElementById('app');
+            let quotaText = '...';
+            if (quota) {
+                quotaText = ((quota.max_daily || 4) - (quota.uploads_today || 0)) + '/' + (quota.max_daily || 4);
+            }
+            const catalogSyncTag = getCatalogSyncLabel();
+
+            app.innerHTML = `
+    <header class="header">
+      <div class="logo"><i class="fas fa-leaf"></i> <span>Floret Shop</span></div>
+      <div class="hdr-btns">
+        ${user && user.power_level === 1 ? `<div class="hdr-btn" style="background:rgba(236,72,153,0.15);border-color:var(--pink);cursor:default" title="Cuota"><i class="fas fa-fire" style="color:var(--pink)"></i> <b style="margin-left:5px;color:#fff;font-size:0.85rem">${quotaText}</b></div>` : ''}
+        ${user ? `<button class="hdr-btn" onclick="openProfile()"><i class="fas fa-user"></i> ${user.username}${isMalevoSession() && malevoUnreadCount > 0 ? `<span class="notif-badge">${malevoUnreadCount}</span>` : ''}</button>` : `<button class="hdr-btn" onclick="openAuth()"><i class="fas fa-user"></i> <span>Entrar</span></button>`}
+        <button class="hdr-btn" onclick="refreshCatalog()" title="Sincronizar catalogo"><i class="fas fa-rotate"></i> Sync</button>
+        <button class="hdr-btn cart-btn" onclick="openCart()">
+          <i class="fas fa-shopping-cart"></i>
+          ${cart.length > 0 ? `<span class="cart-count">${cart.length}</span>` : ''}
+        </button>
+      </div>
+    </header>
+
+    <main class="container">
+      <h2 class="title"><i class="fas fa-store"></i> Productos</h2>
+      <div class="catalog-meta">
+        <span class="sync-tag" id="catalog-sync-tag">${catalogSyncTag}</span>
+        <span id="catalog-results">${filteredProducts.length} resultados de ${products.length}</span>
+      </div>
+      <div class="catalog-controls">
+        <input class="catalog-control" placeholder="Buscar por nombre o descripcion" value="${escapeHtml(catalogFilters.query)}" oninput="updateCatalogFilter('query', this.value)">
+        <select class="catalog-control" onchange="updateCatalogFilter('condition', this.value)">
+          <option value="all" ${catalogFilters.condition === 'all' ? 'selected' : ''}>Condicion: todas</option>
+          <option value="nuevo" ${catalogFilters.condition === 'nuevo' ? 'selected' : ''}>Solo nuevo</option>
+          <option value="usado" ${catalogFilters.condition === 'usado' ? 'selected' : ''}>Solo usado</option>
+        </select>
+        <select class="catalog-control" onchange="updateCatalogFilter('stock', this.value)">
+          <option value="all" ${catalogFilters.stock === 'all' ? 'selected' : ''}>Stock: todos</option>
+          <option value="in" ${catalogFilters.stock === 'in' ? 'selected' : ''}>Con stock</option>
+          <option value="low" ${catalogFilters.stock === 'low' ? 'selected' : ''}>Stock bajo (1-4)</option>
+          <option value="out" ${catalogFilters.stock === 'out' ? 'selected' : ''}>Agotados</option>
+        </select>
+        <input class="catalog-control" type="number" min="0" placeholder="Precio min" value="${escapeHtml(catalogFilters.minPrice)}" oninput="updateCatalogFilter('minPrice', this.value)">
+        <input class="catalog-control" type="number" min="0" placeholder="Precio max" value="${escapeHtml(catalogFilters.maxPrice)}" oninput="updateCatalogFilter('maxPrice', this.value)">
+        <select class="catalog-control" onchange="updateCatalogFilter('sort', this.value)">
+          <option value="recent" ${catalogFilters.sort === 'recent' ? 'selected' : ''}>Orden: mas recientes</option>
+          <option value="price-asc" ${catalogFilters.sort === 'price-asc' ? 'selected' : ''}>Precio: menor a mayor</option>
+          <option value="price-desc" ${catalogFilters.sort === 'price-desc' ? 'selected' : ''}>Precio: mayor a menor</option>
+          <option value="stock-desc" ${catalogFilters.sort === 'stock-desc' ? 'selected' : ''}>Stock: mayor a menor</option>
+          <option value="rating-desc" ${catalogFilters.sort === 'rating-desc' ? 'selected' : ''}>Rating: mayor a menor</option>
+        </select>
+      </div>
+      <div class="swipe" id="products-grid"></div>
+    </main>
+    <div class="fly-cart" id="fly-cart">🛒</div>
+    <div class="cart-panel" id="cart-panel">
+      <div class="cart-hd">
+        <h3><i class="fas fa-shopping-cart"></i> Carrito</h3>
+        <button class="modal-cl" onclick="closeCart()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="cart-items" id="cart-items"></div>
+      <div class="cart-ft">
+        <div class="cart-total"><span>Total</span><span id="cart-total">$0</span></div>
+        <button class="btn btn-p" style="width:100%" onclick="checkout()"><i class="fas fa-credit-card"></i> Ir a Pagar</button>
+      </div>
+    </div>
+    ${isAdmin ? `<button class="admin-fab" onclick="openAddProduct()"><i class="fas fa-plus"></i> Agregar</button>` : ''}
+    <div class="modal-bg" id="modal"></div>
+  `;
+            applyCatalogFilters({ rerender: true });
+            renderCart();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            if (products.length === 0) {
+                grid.innerHTML = `<div class="empty"><i class="fas fa-box-open"></i><p>No hay productos aun</p></div>`;
+                return;
+            }
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = `<div class="empty"><i class="fas fa-filter"></i><p>No hay resultados con los filtros actuales</p></div>`;
+                return;
+            }
+
+            grid.innerHTML = filteredProducts.map((p) => {
+                const i = products.findIndex((item) => Number(item.id) === Number(p.id));
+                const isSoldOut = (p.stock || 0) <= 0;
+                const lowStock = !isSoldOut && p.stock < 5;
+                return `
+    <div class="card ${isSoldOut ? 'sold-out' : ''}" style="position:relative">
+      <span class="badge badge-${p.condition === 'Nuevo' ? 'new' : 'used'}">${p.condition}</span>
+      ${!isSoldOut ? `<span class="stock-badge ${lowStock ? 'stock-low' : ''}">${p.stock} disponibles</span>` : ''}
+      
+      <div class="card-img-container" style="position:relative;width:100%;height:300px;overflow:hidden">
+          <img class="card-img slideshow-img" 
+               src="${p.images[0] || 'https://via.placeholder.com/400x300/1a1025/8B5CF6?text=Producto'}" 
+               alt="${p.name}" 
+               data-imgs="${p.images.join(',')}" 
+               data-idx="0"
+               style="width:100%;height:100%;object-fit:cover;transition:opacity 0.5s ease">
+      </div>
+
+      <div class="card-body">
+        <h3 class="card-name">${p.name}</h3>
+        <p class="card-desc">${p.description}</p>
+        <div class="card-price">$${p.price.toLocaleString()}</div>
+        <div class="rating-row">
+          <span>${formatStars(p?.reviewSummary?.avgRating || 0)}</span>
+          <small>${(p?.reviewSummary?.avgRating || 0).toFixed(1)} (${p?.reviewSummary?.count || 0} reviews)</small>
+        </div>
+        <div class="card-btns">
+            <button class="btn btn-s" onclick="openDetail(${i})"><i class="fas fa-info-circle"></i> Ver ficha</button>
+            <button class="btn btn-p" onclick="addToCart(${i}, event)" ${isSoldOut ? 'disabled' : ''}>
+            ${isSoldOut ? 'Agotado' : '<i class="fas fa-cart-plus"></i> Agregar'}
+            </button>
+        </div>
+      </div>
+    </div>
+                `;
+            }).join('');
+
+            startSlideshow();
+        }
+
+        let slideshowInterval;
+        function startSlideshow() {
+            if (slideshowInterval) clearInterval(slideshowInterval);
+            slideshowInterval = setInterval(() => {
+                document.querySelectorAll('.slideshow-img').forEach(img => {
+                    const srcList = img.dataset.imgs ? img.dataset.imgs.split(',') : [];
+                    if (srcList.length > 1) {
+                        let currentIdx = parseInt(img.dataset.idx || 0);
+                        let nextIdx = (currentIdx + 1) % srcList.length;
+
+                        // Efecto simple de cambio
+                        img.style.opacity = '0.7';
+                        setTimeout(() => {
+                            img.src = srcList[nextIdx];
+                            img.dataset.idx = nextIdx;
+                            img.style.opacity = '1';
+                        }, 200);
+                    }
+                });
+            }, 3000); // Cambia cada 3 segundos
+        }
+
+        function renderCart() {
+            const itemsEl = document.getElementById('cart-items');
+            const totalEl = document.getElementById('cart-total');
+            if (cart.length === 0) {
+                itemsEl.innerHTML = `<div class="empty"><i class="fas fa-shopping-cart"></i><p>Carrito vacío</p></div>`;
+                totalEl.textContent = '$0';
+                return;
+            }
+            let total = 0;
+            itemsEl.innerHTML = cart.map((c, i) => {
+                total += c.price;
+                return `
+      <div class="cart-item">
+        <img src="${c.image}" alt="${c.name}">
+        <div class="cart-item-info">
+          <div class="cart-item-name">${c.name}</div>
+          ${c.size ? `<small>Talle: ${c.size}</small>` : ''}
+          <div class="cart-item-price">$${c.price.toLocaleString()}</div>
+        </div>
+        <button class="cart-item-rm" onclick="removeFromCart(${i})"><i class="fas fa-trash"></i></button>
+      </div>
+    `;
+            }).join('');
+            totalEl.textContent = '$' + total.toLocaleString();
+        }
+
+        // ========== CART FUNCTIONS ==========
+        function openCart() { document.getElementById('cart-panel').classList.add('on'); }
+        function closeCart() { document.getElementById('cart-panel').classList.remove('on'); }
+
+        function addToCart(idx, evt) {
+            const p = products[idx];
+            if ((p.stock || 0) <= 0) return showToast('Producto agotado', true);
+
+            // Verificar si ya agregamos más del stock disponible
+            const inCart = cart.filter(c => c.name === p.name).length;
+            if (inCart >= p.stock) return showToast('No hay más unidades disponibles', true);
+
+            const item = { name: p.name, price: p.price, image: p.images[0] || '', size: null, originalIdx: idx, productId: p.id }; // Guardamos idx para referencias
+
+            if (p.requiresSize && p.sizes?.length) {
+                openSizeModal(idx);
+                return;
+            }
+
+            cart.push(item);
+            localStorage.setItem('floret_cart', JSON.stringify(cart));
+            animateAddToCart(evt);
+            render();
+            showToast('Agregado al carrito');
+        }
+
+        function addToCartWithSize(idx, size) {
+            const p = products[idx];
+            // Verificar stock nuevamente
+            const inCart = cart.filter(c => c.name === p.name).length;
+            if (inCart >= p.stock) {
+                closeModal();
+                return showToast('No hay más unidades disponibles', true);
+            }
+
+            cart.push({ name: p.name, price: p.price, image: p.images[0] || '', size, originalIdx: idx, productId: p.id });
+            localStorage.setItem('floret_cart', JSON.stringify(cart));
+            closeModal();
+            render();
+            showToast('Agregado al carrito');
+        }
+
+        function removeFromCart(i) {
+            cart.splice(i, 1);
+            localStorage.setItem('floret_cart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        function animateAddToCart(evt) {
+            const flyCart = document.getElementById('fly-cart');
+            flyCart.classList.add('on');
+
+            const ball = document.createElement('div');
+            ball.className = 'fly-ball';
+            ball.style.left = (evt?.clientX || window.innerWidth / 2) + 'px';
+            ball.style.top = (evt?.clientY || window.innerHeight / 2) + 'px';
+            document.body.appendChild(ball);
+
+            const targetX = 60;
+            const targetY = window.innerHeight / 2;
+
+            ball.animate([
+                { left: ball.style.left, top: ball.style.top },
+                { left: targetX + 'px', top: targetY + 'px' }
+            ], { duration: 500, easing: 'ease-in' }).onfinish = () => {
+                ball.remove();
+                flyCart.classList.remove('on');
+            };
+        }
+
+        // ========== MODALS ==========
+        function openModal(content) {
+            const m = document.getElementById('modal');
+            m.innerHTML = `<div class="modal">${content}</div>`;
+            m.classList.add('on');
+        }
+        function closeModal() { document.getElementById('modal').classList.remove('on'); }
+        async function openDetail(idx) {
+            const p = products[idx];
+            openModal(`
+    <div class="modal-hd"><h3>${escapeHtml(p.name)}</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd"><div class="empty"><i class="fas fa-spinner fa-spin"></i><p>Cargando ficha...</p></div></div>
+  `);
+
+            try {
+                const reviewData = await loadProductReviews(p.id);
+                const previewReviews = (reviewData.reviews || []).slice(0, 3);
+                openModal(`
+    <div class="modal-hd"><h3>${escapeHtml(p.name)}</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      ${p.images.length > 1 ? `<div class="gallery">${p.images.map((img, i) => `<img src="${img}" class="${i === 0 ? 'on' : ''}" onclick="changeMainImg(this, '${img}')">`).join('')}</div>` : ''}
+      <img class="main-img" id="main-img" src="${p.images[0] || 'https://via.placeholder.com/400x300'}">
+      <p style="margin-bottom:12px;color:var(--muted)">${escapeHtml(p.description)}</p>
+      <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+        <span class="badge badge-${p.condition === 'Nuevo' ? 'new' : 'used'}">${escapeHtml(p.condition)}</span>
+        ${p.measurements ? `<span style="color:var(--muted)"><i class="fas fa-ruler-combined"></i> ${escapeHtml(p.measurements)}</span>` : ''}
+      </div>
+      <div class="rating-row">
+        <span>${formatStars(reviewData.summary?.avgRating || 0)}</span>
+        <small>${Number(reviewData.summary?.avgRating || 0).toFixed(1)} (${reviewData.summary?.count || 0} reviews)</small>
+        <span class="rating-pill">Servidor</span>
+      </div>
+      ${previewReviews.length ? `
+        <div>
+          ${previewReviews.map(r => `
+            <div class="review-card">
+              <div class="review-head">
+                <strong>${escapeHtml(r.reviewer_name || 'Cliente Floret')}</strong>
+                <span class="review-date">${formatDateTime(r.created_at)}</span>
+              </div>
+              <div class="review-stars">${formatStars(r.rating)}</div>
+              <div class="review-comment">${escapeHtml(r.comment)}</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : `<div class="review-card"><div class="review-comment">Todavia no hay reviews para este producto.</div></div>`}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-s" style="flex:1;min-width:190px" onclick="openProductReviewComposer(${idx})"><i class="fas fa-star"></i> Dejar review del producto</button>
+        <button class="btn btn-s" style="flex:1;min-width:190px" onclick="openProductReviewsList(${p.id}, '${escapeHtml(p.name)}')"><i class="fas fa-comments"></i> Ver todas las reviews</button>
+      </div>
+      <button class="btn btn-s" style="width:100%;margin-top:8px" onclick="openSellerReviewComposer()"><i class="fas fa-user-check"></i> Calificar a Malevo</button>
+      ${p.requiresSize && p.sizes?.length ? `<p style="font-weight:600;margin:12px 0 8px">Selecciona talle:</p><div class="size-sel">${p.sizes.map(s => `<button class="size-btn" onclick="addToCartWithSize(${idx}, '${s}')">${s}</button>`).join('')}</div>` : `<button class="btn btn-p" style="width:100%;margin-top:12px" onclick="addToCart(${idx})"><i class="fas fa-cart-plus"></i> Agregar al carrito</button>`}
+      <div style="font-size:1.6rem;font-weight:700;color:var(--pri);margin-top:16px">$${p.price.toLocaleString()}</div>
+    </div>
+  `);
+            } catch (error) {
+                openModal(`
+    <div class="modal-hd"><h3>${escapeHtml(p.name)}</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd"><div class="empty"><i class="fas fa-triangle-exclamation"></i><p>${escapeHtml(error.message || 'No se pudo cargar la ficha')}</p></div></div>
+  `);
+            }
+        }
+        function changeMainImg(el, src) {
+            document.getElementById('main-img').src = src;
+            document.querySelectorAll('.gallery img').forEach(i => i.classList.remove('on'));
+            el.classList.add('on');
+        }
+
+        function openSizeModal(idx) {
+            const p = products[idx];
+            openModal(`
+    <div class="modal-hd"><h3>Selecciona talle</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <p style="margin-bottom:12px">${p.name}</p>
+      <div class="size-sel">${p.sizes.map(s => `<button class="size-btn" onclick="addToCartWithSize(${idx}, '${s}')">${s}</button>`).join('')}</div>
+    </div>
+  `);
+        }
+
+        function renderStarPicker(selected = 5, inputId = 'review-stars') {
+            const safeSelected = Math.max(1, Math.min(5, Number(selected) || 5));
+            return `
+    <input type="hidden" id="${inputId}" value="${safeSelected}">
+    <div class="star-picker" data-target="${inputId}">
+      ${[1, 2, 3, 4, 5].map(v => `<i class="fas fa-star ${v <= safeSelected ? 'on' : ''}" onclick="setStarValue('${inputId}', ${v}, this)"></i>`).join('')}
+    </div>
+  `;
+        }
+
+        function setStarValue(inputId, value, iconEl) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            input.value = String(value);
+            const root = iconEl?.parentElement;
+            if (!root) return;
+            const stars = root.querySelectorAll('i');
+            stars.forEach((star, idx) => star.classList.toggle('on', idx < value));
+        }
+
+        function openProductReviewComposer(idx) {
+            const p = products[idx];
+            if (!user) {
+                showToast('Debes iniciar sesion para dejar una review', true);
+                return openAuth();
+            }
+            openModal(`
+    <div class="modal-hd"><h3><i class="fas fa-star"></i> Review de producto</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="review-box">
+        <h4>${escapeHtml(p.name)}</h4>
+        <div class="frm-grp">
+          <label class="frm-lbl">Estrellas</label>
+          ${renderStarPicker(5, 'product-review-stars')}
+        </div>
+        <div class="frm-grp">
+          <label class="frm-lbl">Comentario</label>
+          <textarea class="frm-txt" id="product-review-comment" placeholder="Cuenta tu experiencia con este producto"></textarea>
+        </div>
+        <button class="btn btn-p" style="width:100%" onclick="submitProductReview(${idx})"><i class="fas fa-paper-plane"></i> Publicar review</button>
+      </div>
+    </div>
+  `);
+        }
+
+        async function submitProductReview(idx) {
+            const p = products[idx];
+            const stars = Number(document.getElementById('product-review-stars')?.value || 0);
+            const comment = String(document.getElementById('product-review-comment')?.value || '').trim();
+            if (!stars || stars < 1 || stars > 5) return showToast('Selecciona una calificacion valida', true);
+            if (!comment) return showToast('Escribe un comentario', true);
+
+            try {
+                const res = await fetch(`${API}/floret/reviews/product`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productId: p.id,
+                        rating: stars,
+                        comment,
+                        reviewerUserId: user?.id || null,
+                        reviewerName: user?.username || 'Cliente Floret'
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo publicar la review');
+                productReviewsCache[p.id] = null;
+                await loadProducts({ silent: true, showErrorToast: false });
+                closeModal();
+                showToast('Review publicada');
+            } catch (error) {
+                showToast(error.message || 'Error al publicar review', true);
+            }
+        }
+
+        function openSellerReviewComposer() {
+            if (!user) {
+                showToast('Debes iniciar sesion para calificar a Malevo', true);
+                return openAuth();
+            }
+            openModal(`
+    <div class="modal-hd"><h3><i class="fas fa-user-check"></i> Calificar a Malevo</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="review-box">
+        <h4>Vendedor: Malevo (${FLORET_MAIN_SELLER_EMAIL})</h4>
+        <div class="frm-grp">
+          <label class="frm-lbl">Estrellas</label>
+          ${renderStarPicker(5, 'seller-review-stars')}
+        </div>
+        <div class="frm-grp">
+          <label class="frm-lbl">Comentario</label>
+          <textarea class="frm-txt" id="seller-review-comment" placeholder="Como fue tu experiencia con Malevo"></textarea>
+        </div>
+        <button class="btn btn-p" style="width:100%" onclick="submitSellerReview()"><i class="fas fa-paper-plane"></i> Publicar review</button>
+      </div>
+    </div>
+  `);
+        }
+
+        async function submitSellerReview() {
+            const stars = Number(document.getElementById('seller-review-stars')?.value || 0);
+            const comment = String(document.getElementById('seller-review-comment')?.value || '').trim();
+            if (!stars || stars < 1 || stars > 5) return showToast('Selecciona una calificacion valida', true);
+            if (!comment) return showToast('Escribe un comentario', true);
+
+            try {
+                const res = await fetch(`${API}/floret/reviews/seller`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rating: stars,
+                        comment,
+                        reviewerUserId: user?.id || null,
+                        reviewerName: user?.username || 'Cliente Floret',
+                        sellerEmail: FLORET_MAIN_SELLER_EMAIL
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo publicar la review');
+                sellerReviewsCache = null;
+                allReviewsCache = null;
+                closeModal();
+                showToast('Review enviada a Malevo');
+            } catch (error) {
+                showToast(error.message || 'Error al publicar review', true);
+            }
+        }
+
+        async function openProductReviewsList(productId, productName) {
+            try {
+                const data = await loadProductReviews(productId, true);
+                openModal(`
+    <div class="modal-hd"><h3><i class="fas fa-comments"></i> Reviews: ${escapeHtml(productName)}</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="rating-row">
+        <span>${formatStars(data.summary?.avgRating || 0)}</span>
+        <small>${Number(data.summary?.avgRating || 0).toFixed(1)} (${data.summary?.count || 0} reviews)</small>
+      </div>
+      ${(data.reviews || []).length ? data.reviews.map(r => `
+        <div class="review-card">
+          <div class="review-head">
+            <strong>${escapeHtml(r.reviewer_name || 'Cliente Floret')}</strong>
+            <span class="review-date">${formatDateTime(r.created_at)}</span>
+          </div>
+          <div class="review-stars">${formatStars(r.rating)}</div>
+          <div class="review-comment">${escapeHtml(r.comment)}</div>
+        </div>
+      `).join('') : `<div class="empty"><i class="fas fa-comment-slash"></i><p>Sin reviews por ahora</p></div>`}
+    </div>
+  `);
+            } catch (error) {
+                showToast(error.message || 'No se pudieron cargar reviews', true);
+            }
+        }
+
+        async function openSellerReviewsPanel() {
+            try {
+                const data = await loadSellerReviews(true);
+                openModal(`
+    <div class="modal-hd"><h3><i class="fas fa-user-check"></i> Reviews a Malevo</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="rating-row">
+        <span>${formatStars(data.summary?.avgRating || 0)}</span>
+        <small>${Number(data.summary?.avgRating || 0).toFixed(1)} (${data.summary?.count || 0} reviews)</small>
+      </div>
+      ${(data.reviews || []).length ? data.reviews.map(r => `
+        <div class="review-card">
+          <div class="review-head">
+            <strong>${escapeHtml(r.reviewer_name || 'Cliente Floret')}</strong>
+            <span class="review-date">${formatDateTime(r.created_at)}</span>
+          </div>
+          <div class="review-stars">${formatStars(r.rating)}</div>
+          <div class="review-comment">${escapeHtml(r.comment)}</div>
+        </div>
+      `).join('') : `<div class="empty"><i class="fas fa-comment-slash"></i><p>Sin reviews por ahora</p></div>`}
+    </div>
+  `);
+            } catch (error) {
+                showToast(error.message || 'No se pudo abrir panel de reviews', true);
+            }
+        }
+
+        async function openMalevoNotifications() {
+            if (!user || !isMalevoSession()) return showToast('Solo Malevo puede ver esta seccion', true);
+            try {
+                const data = await loadMalevoNotifications(true);
+                openModal(`
+    <div class="modal-hd"><h3><i class="fas fa-bell"></i> Notificaciones de Malevo</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap">
+        <span class="rating-pill">${data.unreadCount || 0} sin leer</span>
+        <button class="btn btn-s" style="max-width:200px" onclick="markAllMalevoNotificationsRead()"><i class="fas fa-check-double"></i> Marcar todo leido</button>
+      </div>
+      ${(data.notifications || []).length ? data.notifications.map(n => `
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="openNotificationTarget(${n.id}, '${n.review_scope || ''}', ${n.review_id || 0}, '${n.type || ''}', ${n.order_id || 0})">
+          <div class="notif-title">
+            <strong>${escapeHtml(n.title || 'Notificacion')}</strong>
+            <span class="notif-chip">${escapeHtml(n.type || n.review_scope || 'review')}</span>
+          </div>
+          <div class="notif-msg">${escapeHtml(n.message || '')}</div>
+          <div class="notif-date">${formatDateTime(n.created_at)}</div>
+        </div>
+      `).join('') : `<div class="empty"><i class="fas fa-bell-slash"></i><p>Sin notificaciones por ahora</p></div>`}
+    </div>
+  `);
+            } catch (error) {
+                showToast(error.message || 'No se pudieron cargar notificaciones', true);
+            }
+        }
+
+        async function markMalevoNotificationRead(notificationId) {
+            if (!user) return;
+            await fetch(`${API}/floret/notifications/read/${notificationId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, email: user.email || '' })
+            }).catch(() => null);
+        }
+
+        async function markAllMalevoNotificationsRead() {
+            if (!user) return;
+            try {
+                await fetch(`${API}/floret/notifications/read-all`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, email: user.email || '' })
+                });
+                malevoNotifications = malevoNotifications.map(n => ({ ...n, is_read: true }));
+                malevoUnreadCount = 0;
+                render();
+                openMalevoNotifications();
+            } catch (_error) {
+                showToast('No se pudieron marcar como leidas', true);
+            }
+        }
+
+        async function openNotificationTarget(notificationId, scope, reviewId, type = '', orderId = 0) {
+            await markMalevoNotificationRead(notificationId);
+            malevoNotifications = malevoNotifications.map(n => n.id === notificationId ? { ...n, is_read: true } : n);
+            malevoUnreadCount = malevoNotifications.filter(n => !n.is_read).length;
+            render();
+
+            if (scope === 'order' || String(type || '').startsWith('order_')) {
+                return openSellerOperationsPanel(Number(orderId || 0) || null);
+            }
+            if (scope === 'stock' || type === 'stock_low') {
+                return openSellerOperationsPanel(null);
+            }
+            if (scope === 'seller') {
+                return openSellerReviewsPanel();
+            }
+
+            try {
+                const res = await fetch(`${API}/floret/reviews/product-detail/${reviewId}?userId=${encodeURIComponent(user.id)}&email=${encodeURIComponent(user.email || '')}`, { cache: 'no-store' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se encontro la review');
+                openModal(`
+    <div class="modal-hd"><h3><i class="fas fa-message"></i> Review de producto</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="review-card">
+        <div class="review-head">
+          <strong>${escapeHtml(data.product_name || 'Producto')}</strong>
+          <span class="review-date">${formatDateTime(data.created_at)}</span>
+        </div>
+        <div class="review-comment"><b>Cliente:</b> ${escapeHtml(data.reviewer_name || 'Cliente Floret')}</div>
+        <div class="review-stars" style="margin:8px 0">${formatStars(data.rating)}</div>
+        <div class="review-comment">${escapeHtml(data.comment || '')}</div>
+      </div>
+      <button class="btn btn-s" style="width:100%" onclick="openMalevoReviewHub()"><i class="fas fa-layer-group"></i> Ver todas las reviews</button>
+    </div>
+  `);
+            } catch (error) {
+                showToast(error.message || 'No se pudo abrir detalle de review', true);
+            }
+        }
+
+        function renderSellerOrderStatusLabel(status) {
+            const safe = String(status || 'new').toLowerCase();
+            const labels = {
+                new: 'Nuevo',
+                paid: 'Pagado',
+                preparing: 'Preparando',
+                shipped: 'Enviado',
+                delivered: 'Entregado',
+                cancelled: 'Cancelado'
+            };
+            return labels[safe] || 'Nuevo';
+        }
+
+        async function updateSellerOrderStatus(orderId) {
+            if (!user || !isMalevoSession()) return showToast('Solo perfiles autorizados', true);
+            const selectEl = document.getElementById(`order-status-${orderId}`);
+            if (!selectEl) return;
+            try {
+                const res = await fetch(`${API}/floret/seller/orders/${orderId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        email: user.email || '',
+                        status: selectEl.value
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo actualizar estado');
+                sellerDashboardCache = null;
+                sellerOrdersCache = [];
+                await loadMalevoNotifications(true).catch(() => null);
+                showToast(`Orden #${orderId} actualizada`);
+                openSellerOperationsPanel(orderId);
+            } catch (error) {
+                showToast(error.message || 'No se pudo actualizar', true);
+            }
+        }
+
+        async function openSellerOperationsPanel(focusOrderId = null) {
+            if (!user || !isMalevoSession()) return showToast('Solo Malevo puede abrir esta seccion', true);
+            try {
+                const [dashboard, orders] = await Promise.all([
+                    loadSellerDashboard(true),
+                    loadSellerOrders(true)
+                ]);
+                const stats = dashboard.stats || {};
+                const focusId = Number(focusOrderId || 0) || null;
+                openModal(`
+    <div class="modal-hd"><h3><i class="fas fa-briefcase"></i> Panel de ventas</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="seller-stats-grid">
+        <div class="seller-stat-card"><span>Pedidos</span><b>${Number(stats.totalOrders || 0)}</b></div>
+        <div class="seller-stat-card"><span>Pendientes</span><b>${Number(stats.pendingOrders || 0)}</b></div>
+        <div class="seller-stat-card"><span>En proceso</span><b>${Number(stats.preparingOrders || 0) + Number(stats.shippedOrders || 0)}</b></div>
+        <div class="seller-stat-card"><span>Facturacion</span><b>$${Number(stats.grossTotal || 0).toLocaleString('es-UY')}</b></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <h4 style="margin:0">Ordenes recientes</h4>
+        <select class="catalog-control" style="max-width:220px" onchange="sellerOrdersStatusFilter = this.value; sellerOrdersCache = []; openSellerOperationsPanel(${focusId || 0});">
+          <option value="all" ${sellerOrdersStatusFilter === 'all' ? 'selected' : ''}>Todos los estados</option>
+          <option value="new" ${sellerOrdersStatusFilter === 'new' ? 'selected' : ''}>Nuevo</option>
+          <option value="paid" ${sellerOrdersStatusFilter === 'paid' ? 'selected' : ''}>Pagado</option>
+          <option value="preparing" ${sellerOrdersStatusFilter === 'preparing' ? 'selected' : ''}>Preparando</option>
+          <option value="shipped" ${sellerOrdersStatusFilter === 'shipped' ? 'selected' : ''}>Enviado</option>
+          <option value="delivered" ${sellerOrdersStatusFilter === 'delivered' ? 'selected' : ''}>Entregado</option>
+          <option value="cancelled" ${sellerOrdersStatusFilter === 'cancelled' ? 'selected' : ''}>Cancelado</option>
+        </select>
+      </div>
+      ${(orders || []).length ? orders.map((order) => `
+        <div class="order-line" style="${focusId && Number(order.id) === focusId ? 'border-color:rgba(236,72,153,.5);box-shadow:0 0 0 1px rgba(236,72,153,.4) inset;' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <strong>#${order.id} · ${escapeHtml(order.buyer_name || 'Cliente')}</strong>
+            <span class="order-status-pill">${renderSellerOrderStatusLabel(order.status)}</span>
+          </div>
+          <div class="review-comment" style="margin-top:5px">Total: <b>$${Number(order.total || 0).toLocaleString('es-UY')}</b> · ${formatDateTime(order.created_at)}</div>
+          <div class="review-comment">Contacto: ${escapeHtml(order.buyer_email || '-')} ${order.buyer_phone ? `· ${escapeHtml(order.buyer_phone)}` : ''}</div>
+          <div class="review-comment">Envio: ${escapeHtml(order.shipping_address || 'Sin direccion')} ${order.shipping_city ? `· ${escapeHtml(order.shipping_city)}` : ''}</div>
+          <div class="review-comment" style="margin:8px 0">Items: ${(order.items || []).map((item) => `${escapeHtml(item.product_name)} x${item.quantity}${item.size ? ` (${escapeHtml(item.size)})` : ''}`).join(' · ') || 'Sin items'}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="order-status-${order.id}" class="catalog-control" style="flex:1;min-width:170px">
+              <option value="new" ${String(order.status || '') === 'new' ? 'selected' : ''}>Nuevo</option>
+              <option value="paid" ${String(order.status || '') === 'paid' ? 'selected' : ''}>Pagado</option>
+              <option value="preparing" ${String(order.status || '') === 'preparing' ? 'selected' : ''}>Preparando</option>
+              <option value="shipped" ${String(order.status || '') === 'shipped' ? 'selected' : ''}>Enviado</option>
+              <option value="delivered" ${String(order.status || '') === 'delivered' ? 'selected' : ''}>Entregado</option>
+              <option value="cancelled" ${String(order.status || '') === 'cancelled' ? 'selected' : ''}>Cancelado</option>
+            </select>
+            <button class="btn btn-p" style="max-width:220px" onclick="updateSellerOrderStatus(${order.id})"><i class="fas fa-check"></i> Aplicar estado</button>
+          </div>
+        </div>
+      `).join('') : `<div class="empty"><i class="fas fa-box-open"></i><p>No hay ordenes para este filtro</p></div>`}
+
+      <h4 style="margin:14px 0 8px">Stock sensible</h4>
+      ${(dashboard.lowStock || []).length ? (dashboard.lowStock || []).map((p) => `
+        <div class="review-card">
+          <div class="review-head">
+            <strong>${escapeHtml(p.name)}</strong>
+            <span class="review-date">${Number(p.stock || 0)} unidades</span>
+          </div>
+          <div class="review-comment">Precio: $${Number(p.price || 0).toLocaleString('es-UY')}</div>
+        </div>
+      `).join('') : '<div class="review-comment">Sin alertas de stock por ahora.</div>'}
+    </div>
+  `);
+            } catch (error) {
+                showToast(error.message || 'No se pudo abrir panel de ventas', true);
+            }
+        }
+
+        async function openMalevoReviewHub() {
+            if (!user || !isMalevoSession()) return showToast('Solo Malevo puede abrir este centro', true);
+            try {
+                const data = await loadAllReviews(true);
+                openModal(`
+    <div class="modal-hd"><h3><i class="fas fa-layer-group"></i> Centro de Reviews</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="review-grid">
+        <div class="review-box">
+          <h4>Reviews a Malevo (${(data.sellerReviews || []).length})</h4>
+          ${(data.sellerReviews || []).slice(0, 8).map(r => `
+            <div class="review-card">
+              <div class="review-head">
+                <strong>${escapeHtml(r.reviewer_name || 'Cliente Floret')}</strong>
+                <span class="review-date">${formatDateTime(r.created_at)}</span>
+              </div>
+              <div class="review-stars">${formatStars(r.rating)}</div>
+              <div class="review-comment">${escapeHtml(r.comment || '')}</div>
+            </div>
+          `).join('') || '<div class="review-comment">Sin reviews de vendedor.</div>'}
+        </div>
+        <div class="review-box">
+          <h4>Reviews de Productos (${(data.productReviews || []).length})</h4>
+          ${(data.productReviews || []).slice(0, 8).map(r => `
+            <div class="review-card">
+              <div class="review-head">
+                <strong>${escapeHtml(r.product_name || 'Producto')}</strong>
+                <span class="review-date">${formatDateTime(r.created_at)}</span>
+              </div>
+              <div class="review-comment"><b>Cliente:</b> ${escapeHtml(r.reviewer_name || 'Cliente Floret')}</div>
+              <div class="review-stars" style="margin:6px 0">${formatStars(r.rating)}</div>
+              <div class="review-comment">${escapeHtml(r.comment || '')}</div>
+            </div>
+          `).join('') || '<div class="review-comment">Sin reviews de producto.</div>'}
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <h4 style="margin-bottom:10px">Timeline general (reciente primero)</h4>
+        ${(data.allReviews || []).slice(0, 20).map(r => `
+          <div class="review-card">
+            <div class="review-head">
+              <strong>${r.scope === 'seller' ? 'Review a Malevo' : `Review de ${escapeHtml(r.product_name || 'Producto')}`}</strong>
+              <span class="review-date">${formatDateTime(r.created_at)}</span>
+            </div>
+            <div class="review-comment"><b>Cliente:</b> ${escapeHtml(r.reviewer_name || 'Cliente Floret')}</div>
+            <div class="review-stars" style="margin:6px 0">${formatStars(r.rating)}</div>
+            <div class="review-comment">${escapeHtml(r.comment || '')}</div>
+          </div>
+        `).join('') || '<div class="review-comment">Sin datos.</div>'}
+      </div>
+    </div>
+  `);
+            } catch (error) {
+                showToast(error.message || 'No se pudo cargar el centro de reviews', true);
+            }
+        }
+
+        // ========== AUTH ==========
+        function openAuth() {
+            openModal(`
+    <div class="modal-hd"><h3>Acceder</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="auth-tabs">
+        <button class="auth-tab on" data-auth="login" onclick="switchAuth('login', this)">Iniciar sesion</button>
+        <button class="auth-tab" data-auth="register" onclick="switchAuth('register', this)">Registrarse</button>
+        <button class="auth-tab" data-auth="reset" onclick="switchAuth('reset', this)">Restablecer</button>
+      </div>
+      <div id="auth-form"></div>
+    </div>
+  `);
+            showLoginForm();
+        }
+
+        function setActiveAuthTab(type) {
+            document.querySelectorAll('.auth-tab').forEach((tab) => {
+                tab.classList.toggle('on', tab.dataset.auth === type);
+            });
+        }
+
+        function switchAuth(type, el) {
+            if (el) setActiveAuthTab(type);
+            if (type === 'login') return showLoginForm();
+            if (type === 'register') return showRegisterForm();
+            return showResetForm();
+        }
+
+        function togglePasswordVisibility(inputId, buttonEl) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const reveal = input.type === 'password';
+            input.type = reveal ? 'text' : 'password';
+            if (buttonEl) buttonEl.innerHTML = reveal ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        }
+
+        function isValidPassword(pass) {
+            const value = String(pass || '');
+            return value.length >= 8 && /[A-Za-z]/.test(value) && /\d/.test(value);
+        }
+
+        function showLoginForm() {
+            setActiveAuthTab('login');
+            document.getElementById('auth-form').innerHTML = `
+    <div class="frm-grp"><label class="frm-lbl">Usuario o email</label><input class="frm-inp" id="login-user" placeholder="Tu usuario o email"></div>
+    <div class="frm-grp">
+      <label class="frm-lbl">Contrasena</label>
+      <div class="pass-wrap">
+        <input class="frm-inp" type="password" id="login-pass" placeholder="Minimo 8 caracteres">
+        <button class="pass-toggle" type="button" onclick="togglePasswordVisibility('login-pass', this)"><i class="fas fa-eye"></i></button>
+      </div>
+    </div>
+    <div class="auth-row">
+      <label class="auth-check"><input type="checkbox" id="login-remember" checked> Recordarme</label>
+      <button class="auth-link-btn" type="button" onclick="showResetForm(document.getElementById('login-user')?.value || '')">Olvide mi contrasena</button>
+    </div>
+    <button class="btn btn-p" style="width:100%" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+  `;
+        }
+
+        function showRegisterForm() {
+            setActiveAuthTab('register');
+            document.getElementById('auth-form').innerHTML = `
+    <div class="frm-grp"><label class="frm-lbl">Usuario</label><input class="frm-inp" id="reg-user" placeholder="Elige un usuario"></div>
+    <div class="frm-grp"><label class="frm-lbl">Email</label><input class="frm-inp" type="email" id="reg-email" placeholder="tu@email.com"></div>
+    <div class="frm-grp">
+      <label class="frm-lbl">Contrasena</label>
+      <div class="pass-wrap">
+        <input class="frm-inp" type="password" id="reg-pass" placeholder="Minimo 8 caracteres, incluye numeros">
+        <button class="pass-toggle" type="button" onclick="togglePasswordVisibility('reg-pass', this)"><i class="fas fa-eye"></i></button>
+      </div>
+    </div>
+    <div class="auth-hint">Usa minimo 8 caracteres y al menos 1 numero para mayor seguridad.</div>
+    <button class="btn btn-p" style="width:100%" onclick="doRegister()"><i class="fas fa-user-plus"></i> Crear cuenta</button>
+  `;
+        }
+
+        function showResetForm(prefillIdentifier = '') {
+            setActiveAuthTab('reset');
+            const safeIdentifier = String(prefillIdentifier || '').replace(/"/g, '&quot;');
+            document.getElementById('auth-form').innerHTML = `
+    <div class="frm-grp"><label class="frm-lbl">Usuario o email</label><input class="frm-inp" id="reset-id" placeholder="Tu usuario o email" value="${safeIdentifier}"></div>
+    <div class="frm-grp"><label class="frm-lbl">Email de la cuenta</label><input class="frm-inp" type="email" id="reset-email" placeholder="tu@email.com"></div>
+    <div class="frm-grp">
+      <label class="frm-lbl">Nueva contrasena</label>
+      <div class="pass-wrap">
+        <input class="frm-inp" type="password" id="reset-pass" placeholder="Minimo 8 caracteres y 1 numero">
+        <button class="pass-toggle" type="button" onclick="togglePasswordVisibility('reset-pass', this)"><i class="fas fa-eye"></i></button>
+      </div>
+    </div>
+    <div class="frm-grp">
+      <label class="frm-lbl">Confirmar contrasena</label>
+      <div class="pass-wrap">
+        <input class="frm-inp" type="password" id="reset-pass-2" placeholder="Repite la nueva contrasena">
+        <button class="pass-toggle" type="button" onclick="togglePasswordVisibility('reset-pass-2', this)"><i class="fas fa-eye"></i></button>
+      </div>
+    </div>
+    <div class="auth-hint">Validaremos usuario/email para permitir el cambio.</div>
+    <button class="btn btn-p" style="width:100%" onclick="doResetPassword()"><i class="fas fa-key"></i> Restablecer contrasena</button>
+  `;
+        }
+
+        async function doLogin() {
+            const identifier = document.getElementById('login-user').value.trim();
+            const password = document.getElementById('login-pass').value;
+            const remember = document.getElementById('login-remember')?.checked !== false;
+            if (!identifier || !password) return showToast('Completa todos los campos', true);
+
+            try {
+                const res = await fetch(API + '/floret/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier, username: identifier, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                user = data.user;
+                isAdmin = user.is_admin || (user.power_level > 0);
+                saveAuthUser(user, remember);
+                closeModal();
+                render();
+                if (user.power_level === 1) loadQuota();
+                if (isMalevoSession()) {
+                    await loadMalevoNotifications(true).catch(() => null);
+                    render();
+                }
+                showToast('Bienvenido!');
+            } catch (e) {
+                showToast(e.message || 'Error al iniciar sesion', true);
+            }
+        }
+
+        async function doRegister() {
+            const username = document.getElementById('reg-user').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-pass').value;
+            if (!username || !email || !password) return showToast('Completa todos los campos', true);
+            if (!isValidPassword(password)) {
+                return showToast('La contrasena debe tener 8+ caracteres e incluir numeros', true);
+            }
+
+            try {
+                const res = await fetch(API + '/floret/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                user = data.user;
+                isAdmin = user.is_admin || (user.power_level > 0);
+                saveAuthUser(user, true);
+                closeModal();
+                render();
+                if (isMalevoSession()) {
+                    await loadMalevoNotifications(true).catch(() => null);
+                    render();
+                }
+                showToast('Cuenta creada!');
+            } catch (e) {
+                showToast(e.message || 'Error al registrar', true);
+            }
+        }
+
+        async function doResetPassword() {
+            const identifier = document.getElementById('reset-id').value.trim();
+            const email = document.getElementById('reset-email').value.trim();
+            const pass = document.getElementById('reset-pass').value;
+            const pass2 = document.getElementById('reset-pass-2').value;
+            if (!identifier || !email || !pass || !pass2) return showToast('Completa todos los campos', true);
+            if (pass !== pass2) return showToast('Las contrasenas no coinciden', true);
+            if (!isValidPassword(pass)) {
+                return showToast('La nueva contrasena debe tener 8+ caracteres e incluir numeros', true);
+            }
+            try {
+                const res = await fetch(API + '/floret/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier, email, newPassword: pass })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo restablecer la contrasena');
+                showToast('Contrasena actualizada. Inicia sesion con la nueva clave.');
+                showLoginForm();
+                const loginInput = document.getElementById('login-user');
+                if (loginInput) loginInput.value = identifier;
+            } catch (e) {
+                showToast(e.message || 'Error restableciendo contrasena', true);
+            }
+        }
+
+        // ========== ADMIN ==========
+        function openAddProduct() {
+            if (!isAdmin) return showToast("No eres administrador", true);
+            openModal(`
+                <div class="modal-hd"><h3><i class="fas fa-plus"></i> Nuevo Producto</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+                <div class="modal-bd">
+                    <div class="frm-grp"><label class="frm-lbl">Nombre</label><input class="frm-inp" id="p-name" placeholder="Nombre del producto"></div>
+                    <div class="frm-grp"><label class="frm-lbl">Descripción</label><textarea class="frm-txt" id="p-desc" placeholder="Describe el producto"></textarea></div>
+                    <div style="display:flex;gap:10px">
+                        <div class="frm-grp" style="flex:1"><label class="frm-lbl">Precio ($)</label><input class="frm-inp" type="number" id="p-price" placeholder="1000"></div>
+                        <div class="frm-grp" style="flex:1"><label class="frm-lbl">Stock</label><input class="frm-inp" type="number" id="p-stock" value="1" placeholder="Cant."></div>
+                    </div>
+                    <div class="frm-grp"><label class="frm-lbl">Estado</label><select class="frm-sel" id="p-cond"><option>Nuevo</option><option>Usado</option><option>Como nuevo</option></select></div>
+                    <div class="frm-grp"><label class="frm-lbl">Imágenes (Subir archivos a Cloudinary)</label><input type="file" class="frm-inp" id="p-files" multiple accept="image/*"></div>
+                    <div class="frm-grp"><label class="frm-lbl"><input type="checkbox" id="p-size"> Requiere talle</label></div>
+                    <div class="frm-grp" id="sizes-grp" style="display:none"><label class="frm-lbl">Talles (separados por coma)</label><input class="frm-inp" id="p-sizes" placeholder="S, M, L, XL"></div>
+                    <div class="frm-grp"><label class="frm-lbl">Medidas (opcional)</label><input class="frm-inp" id="p-meas" placeholder="50x30x20 cm"></div>
+                    <button class="btn btn-p" style="width:100%" id="save-btn" onclick="saveProduct()"><i class="fas fa-save"></i> Publicar en Servidor</button>
+                    ${user && user.power_level === 1 && quota ? `<p style="font-size:0.8rem;color:var(--muted);text-align:center;margin-top:10px">Tu cuota actual: ${quota.max_daily - quota.uploads_today} restantes</p>` : ''}
+                </div>
+            `);
+            document.getElementById('p-size').onchange = (e) => {
+                document.getElementById('sizes-grp').style.display = e.target.checked ? 'block' : 'none';
+            };
+        }
+
+        async function saveProduct() {
+            const btn = document.getElementById('save-btn');
+            if (!user) return showToast("Debes iniciar sesión", true);
+
+            const name = document.getElementById('p-name').value;
+            const price = document.getElementById('p-price').value;
+            const files = document.getElementById('p-files').files;
+
+            if (!name || !price) return showToast('Nombre y precio son obligatorios', true);
+            if (files.length === 0) return showToast('Debes subir al menos una imagen', true);
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo a Cloudinary...';
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('description', document.getElementById('p-desc').value);
+            formData.append('price', price);
+            formData.append('stock', document.getElementById('p-stock').value || 1);
+            formData.append('condition', document.getElementById('p-cond').value);
+            formData.append('requiresSize', document.getElementById('p-size').checked);
+            formData.append('sizes', document.getElementById('p-sizes').value);
+            formData.append('measurements', document.getElementById('p-meas').value);
+            formData.append('userId', user.id);
+
+            for (let i = 0; i < files.length; i++) {
+                formData.append('images', files[i]);
+            }
+
+            try {
+                const res = await fetch(`${API}/floret/products`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Error al guardar');
+
+                showToast('¡Producto publicado exitosamente!');
+                closeModal();
+                loadProducts();
+                if (user.power_level === 1) loadQuota();
+            } catch (e) {
+                console.error(e);
+                showToast(e.message, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Publicar en Servidor';
+            }
+        }
+
+
+        // ========== CHECKOUT ==========
+        let checkoutStep = 1;
+        let checkoutData = { name: '', email: '', phone: '', address: '', city: '', cardNumber: '', cardName: '', cardExp: '', cardCvv: '' };
+
+        function checkout() {
+            if (cart.length === 0) return showToast('El carrito está vacío', true);
+            checkoutStep = 1;
+            checkoutData = { name: '', email: '', phone: '', address: '', city: '', cardNumber: '', cardName: '', cardExp: '', cardCvv: '' };
+            closeCart();
+            renderCheckout();
+        }
+
+        function renderCheckout() {
+            let total = cart.reduce((sum, c) => sum + c.price, 0);
+
+            let stepContent = '';
+            if (checkoutStep === 1) {
+                stepContent = `
+                    <h4 style="margin-bottom:14px"><i class="fas fa-user"></i> Datos de Contacto</h4>
+                    <div class="frm-grp"><label class="frm-lbl">Nombre completo *</label><input class="frm-inp" id="ch-name" value="${checkoutData.name}" placeholder="Tu nombre"></div>
+                    <div class="frm-grp"><label class="frm-lbl">Email *</label><input class="frm-inp" type="email" id="ch-email" value="${checkoutData.email}" placeholder="tu@email.com"></div>
+                    <div class="frm-grp"><label class="frm-lbl">Teléfono *</label><input class="frm-inp" id="ch-phone" value="${checkoutData.phone}" placeholder="+598 9X XXX XXX"></div>
+                    <button class="btn btn-p" style="width:100%" onclick="nextCheckoutStep()"><i class="fas fa-arrow-right"></i> Continuar</button>
+                `;
+            } else if (checkoutStep === 2) {
+                stepContent = `
+                    <h4 style="margin-bottom:14px"><i class="fas fa-truck"></i> Datos de Envío</h4>
+                    <div class="frm-grp"><label class="frm-lbl">Dirección *</label><input class="frm-inp" id="ch-address" value="${checkoutData.address}" placeholder="Calle, número, apto"></div>
+                    <div class="frm-grp"><label class="frm-lbl">Ciudad *</label><input class="frm-inp" id="ch-city" value="${checkoutData.city}" placeholder="Montevideo"></div>
+                    <div style="display:flex;gap:10px">
+                        <button class="btn btn-s" style="flex:1" onclick="prevCheckoutStep()"><i class="fas fa-arrow-left"></i> Atrás</button>
+                        <button class="btn btn-p" style="flex:1" onclick="nextCheckoutStep()"><i class="fas fa-arrow-right"></i> Continuar</button>
+                    </div>
+                `;
+            } else if (checkoutStep === 3) {
+                stepContent = `
+                    <h4 style="margin-bottom:14px"><i class="fas fa-check-circle"></i> Confirmar Pedido</h4>
+                    <div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:12px;margin-bottom:20px">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                            <span style="color:var(--muted)">Cliente:</span>
+                            <span>${checkoutData.name}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                            <span style="color:var(--muted)">Email:</span>
+                            <span>${checkoutData.email}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                            <span style="color:var(--muted)">Envío a:</span>
+                            <span style="text-align:right">${checkoutData.address}<br>${checkoutData.city}</span>
+                        </div>
+                    </div>
+
+                    <div id="wallet_container"></div>
+                    <button id="mp-pay-btn" class="btn btn-p" style="width:100%;height:50px;font-size:1.1rem;background:#009EE3;border:none" onclick="processPayment()">
+                        <i class="fas fa-external-link-alt"></i> Pagar con Mercado Pago $${total.toLocaleString()}
+                    </button>
+                    <p style="text-align:center;font-size:0.85rem;color:var(--muted);margin-top:12px;opacity:0.8">
+                       <i class="fas fa-mobile-alt"></i> Si tienes la App de Mercado Pago, se abrirá automáticamente.
+                    </p>
+                    
+                    <div style="display:flex;gap:10px;margin-top:20px">
+                        <button class="btn btn-s" style="flex:1" onclick="prevCheckoutStep()"><i class="fas fa-arrow-left"></i> Atrás</button>
+                    </div>
+                `;
+            }
+
+            openModal(`
+                <div class="modal-hd"><h3><i class="fas fa-shopping-bag"></i> Checkout</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+                <div class="modal-bd">
+                    <div class="checkout-steps">
+                        <div class="step ${checkoutStep >= 1 ? (checkoutStep > 1 ? 'done' : 'active') : ''}"><span class="step-num">${checkoutStep > 1 ? '<i class="fas fa-check"></i>' : '1'}</span> Contacto</div>
+                        <div class="step ${checkoutStep >= 2 ? (checkoutStep > 2 ? 'done' : 'active') : ''}"><span class="step-num">${checkoutStep > 2 ? '<i class="fas fa-check"></i>' : '2'}</span> Envío</div>
+                        <div class="step ${checkoutStep >= 3 ? 'active' : ''}"><span class="step-num">3</span> Pago</div>
+                    </div>
+                    <div class="checkout-summary">
+                        ${cart.map(c => `<div class="summary-item"><span>${c.name}${c.size ? ` (${c.size})` : ''}</span><span>$${c.price.toLocaleString()}</span></div>`).join('')}
+                        <div class="summary-item"><span>Total</span><span style="color:var(--pri)">$${total.toLocaleString()}</span></div>
+                    </div>
+                    ${stepContent}
+                </div>
+            `);
+        }
+
+        function nextCheckoutStep() {
+            if (checkoutStep === 1) {
+                const name = document.getElementById('ch-name').value;
+                const email = document.getElementById('ch-email').value;
+                const phone = document.getElementById('ch-phone').value;
+                if (!name || !email || !phone) return showToast('Completa todos los campos', true);
+                checkoutData.name = name;
+                checkoutData.email = email;
+                checkoutData.phone = phone;
+            } else if (checkoutStep === 2) {
+                const address = document.getElementById('ch-address').value;
+                const city = document.getElementById('ch-city').value;
+                if (!address || !city) return showToast('Completa todos los campos', true);
+                checkoutData.address = address;
+                checkoutData.city = city;
+            }
+            checkoutStep++;
+            renderCheckout();
+        }
+
+        function prevCheckoutStep() {
+            if (checkoutStep === 2) {
+                checkoutData.name = document.getElementById('ch-name')?.value || checkoutData.name;
+                checkoutData.email = document.getElementById('ch-email')?.value || checkoutData.email;
+                checkoutData.phone = document.getElementById('ch-phone')?.value || checkoutData.phone;
+            } else if (checkoutStep === 3) {
+                checkoutData.address = document.getElementById('ch-address')?.value || checkoutData.address;
+                checkoutData.city = document.getElementById('ch-city')?.value || checkoutData.city;
+            }
+            checkoutStep--;
+            renderCheckout();
+        }
+
+        function formatCardNumber(input) {
+            let v = input.value.replace(/\D/g, '').substring(0, 16);
+            input.value = v.replace(/(\d{4})(?=\d)/g, '$1 ');
+        }
+
+        function formatExpiry(input) {
+            let v = input.value.replace(/\D/g, '').substring(0, 4);
+            if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2);
+            input.value = v;
+        }
+
+        function updateCardPreview() {
+            const num = document.getElementById('ch-cardnum')?.value || '';
+            const name = document.getElementById('ch-cardname')?.value || '';
+            const exp = document.getElementById('ch-cardexp')?.value || '';
+
+            document.getElementById('card-num-display').textContent = num || '•••• •••• •••• ••••';
+            document.getElementById('card-name-display').textContent = name.toUpperCase() || 'TU NOMBRE';
+            document.getElementById('card-exp-display').textContent = exp || 'MM/AA';
+
+            // Detectar marca de tarjeta
+            const firstDigit = num.replace(/\D/g, '')[0];
+            const brand = document.getElementById('card-brand');
+            if (firstDigit === '4') brand.innerHTML = '<i class="fab fa-cc-visa"></i>';
+            else if (firstDigit === '5') brand.innerHTML = '<i class="fab fa-cc-mastercard"></i>';
+            else if (firstDigit === '3') brand.innerHTML = '<i class="fab fa-cc-amex"></i>';
+            else brand.innerHTML = '<i class="fas fa-credit-card"></i>';
+        }
+
+        async function processPayment() {
+            const btn = document.getElementById('mp-pay-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando pago...';
+
+            try {
+                // 0. Guardar backup del carrito por seguridad (por si se borra al volver)
+                localStorage.setItem('floret_cart_backup', JSON.stringify(cart));
+
+                // 1. Crear preferencia en servidor
+                const res = await fetch(`${API}/floret/create_preference`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // Enviamos la URL actual para que MP sepa dónde devolver al usuario (Local o Netlify)
+                    body: JSON.stringify({
+                        items: cart,
+                        back_url: window.location.href.split('?')[0]
+                    })
+                });
+
+                const data = await res.json();
+                if (!data.id) throw new Error('No se pudo iniciar el pago');
+
+                // 2. Abrir checkout de MP
+                mp.checkout({
+                    preference: {
+                        id: data.id
+                    },
+                    autoOpen: true, // Abre el popup automáticamente
+                });
+
+            } catch (e) {
+                console.error(e);
+                showToast('Error al conectar con Mercado Pago', true);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-external-link-alt"></i> Intentar de nuevo';
+            }
+        }
+
+        function showProcessing() {
+            const overlay = document.createElement('div');
+            overlay.className = 'processing-overlay';
+            overlay.id = 'processing';
+            overlay.innerHTML = `<div class="processing-spinner"></div><p style="color:var(--txt)">Procesando pago...</p>`;
+            document.body.appendChild(overlay);
+            setTimeout(() => overlay.classList.add('on'), 10);
+
+            // Simular procesamiento (aquí iría la integración real con Stripe/MP)
+            setTimeout(() => {
+                overlay.innerHTML = `<div class="success-check"><i class="fas fa-check"></i></div><p style="color:var(--txt);font-size:1.3rem;font-weight:600">¡Pago exitoso!</p><p style="color:var(--muted);margin-top:8px">Redirigiendo a WhatsApp...</p>`;
+
+                setTimeout(() => {
+                    overlay.classList.remove('on');
+                    setTimeout(() => overlay.remove(), 300);
+                    sendToWhatsApp();
+                }, 2000);
+            }, 2500);
+        }
+
+        function sendToWhatsApp() {
+            let total = cart.reduce((sum, c) => sum + c.price, 0);
+
+            // Actualizar stock localmente (y persistirlo)
+            cart.forEach(c => {
+                const product = products.find(p => p.name === c.name);
+                if (product) {
+                    product.stock = Math.max(0, (product.stock || 0) - 1);
+                }
+            });
+            // Stock changes only in current UI state. Product source is server catalog.
+
+            let msg = '🌸 *PEDIDO FLORET SHOP - PAGO CONFIRMADO*\n\n';
+            msg += '📋 *PRODUCTOS:*\n';
+            cart.forEach(c => {
+                msg += `• ${c.name}${c.size ? ` (${c.size})` : ''} - $${c.price.toLocaleString()}\n`;
+            });
+            msg += `\n💰 *TOTAL PAGADO: $${total.toLocaleString()}*\n\n`;
+            msg += '👤 *CLIENTE:*\n';
+            msg += `Nombre: ${checkoutData.name}\n`;
+            msg += `Email: ${checkoutData.email}\n`;
+            msg += `Teléfono: ${checkoutData.phone}\n\n`;
+            msg += '📍 *ENVÍO:*\n';
+            msg += `${checkoutData.address}, ${checkoutData.city}\n\n`;
+            msg += '✅ *Pago procesado correctamente*\n';
+            msg += '📦 Por favor coordinar fecha de entrega.';
+
+            const waUrl = `https://wa.me/${WA_NUM}?text=${encodeURIComponent(msg)}`;
+            window.open(waUrl, '_blank');
+
+            cart = [];
+            localStorage.setItem('floret_cart', JSON.stringify(cart));
+            render();
+            showToast('¡Compra completada!');
+        }
+
+        // ========== TOAST ==========
+        function showToast(msg, isError = false) {
+            const t = document.createElement('div');
+            t.className = 'toast' + (isError ? '' : ' success');
+            t.innerHTML = `<i class="fas fa-${isError ? 'exclamation-circle' : 'check-circle'}"></i> ${msg}`;
+            document.body.appendChild(t);
+            setTimeout(() => t.classList.add('show'), 10);
+            setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3000);
+        }
+
+        // ========== LOAD PRODUCTS ==========
+        function formatSyncDate(dateValue) {
+            if (!dateValue) return 'nunca';
+            try {
+                return new Date(dateValue).toLocaleString();
+            } catch (_e) {
+                return 'nunca';
+            }
+        }
+
+        function getCatalogSyncLabel() {
+            if (catalogSyncState === 'loading') return '<i class="fas fa-spinner fa-spin"></i> Sincronizando catalogo...';
+            if (catalogSyncState === 'error') {
+                return `<i class="fas fa-triangle-exclamation"></i> Error de sync${catalogSyncError ? ': ' + catalogSyncError : ''}`;
+            }
+            if (!catalogLastSync) return '<i class="fas fa-cloud"></i> Catalogo pendiente de sincronizar';
+            return `<i class="fas fa-check-circle"></i> Sincronizado: ${formatSyncDate(catalogLastSync)}`;
+        }
+
+        async function refreshCatalog(showSuccessToast = true) {
+            const ok = await loadProducts({ silent: false, showErrorToast: true });
+            if (ok && showSuccessToast) {
+                showToast('Catalogo actualizado');
+            }
+        }
+
+        async function loadProducts(options = {}) {
+            const { silent = false, showErrorToast = true } = options;
+
+            if (!silent) {
+                catalogSyncState = 'loading';
+                catalogSyncError = '';
+                render();
+            }
+
+            try {
+                const res = await fetch(`${API}/floret/products`, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                const serverData = await res.json();
+                products = (Array.isArray(serverData) ? serverData : []).map((p) => ({
+                    ...p,
+                    price: parseFloat(p.price) || 0,
+                    stock: parseInt(p.stock, 10) || 0,
+                    images: Array.isArray(p.images) ? p.images : [],
+                    sellerEmail: p.sellerEmail || FLORET_MAIN_SELLER_EMAIL,
+                    reviewSummary: {
+                        count: Number(p?.reviewSummary?.count || 0),
+                        avgRating: Number(p?.reviewSummary?.avgRating || 0)
+                    }
+                }));
+
+                catalogLastSync = new Date();
+                catalogSyncState = 'idle';
+                catalogSyncError = '';
+                applyCatalogFilters({ rerender: false });
+                render();
+                return true;
+            } catch (e) {
+                console.error(e);
+                catalogSyncState = 'error';
+                catalogSyncError = e?.message || 'desconocido';
+                render();
+                if (showErrorToast) showToast('Error cargando catalogo del servidor', true);
+                return false;
+            }
+        }
+
+        function buildOrderPayloadFromCart(cartItems = []) {
+            const grouped = new Map();
+            for (const item of cartItems) {
+                const productId = Number(item.productId || products.find((p) => p.name === item.name)?.id || 0);
+                if (!productId) continue;
+                const size = String(item.size || '').trim();
+                const key = `${productId}::${size}`;
+                if (!grouped.has(key)) {
+                    grouped.set(key, {
+                        productId,
+                        productName: String(item.name || '').trim(),
+                        unitPrice: Number(item.price || 0) || 0,
+                        quantity: 0,
+                        size: size || null
+                    });
+                }
+                grouped.get(key).quantity += 1;
+            }
+            return Array.from(grouped.values()).filter((item) => item.unitPrice > 0 && item.quantity > 0);
+        }
+
+        async function registerPaidOrder(cartItems = []) {
+            const normalized = buildOrderPayloadFromCart(cartItems);
+            if (!normalized.length) return;
+            const payload = {
+                buyerName: checkoutData.name || user?.username || 'Cliente Floret',
+                buyerEmail: checkoutData.email || user?.email || 'cliente@floret.ows',
+                buyerPhone: checkoutData.phone || '',
+                shippingAddress: checkoutData.address || '',
+                shippingCity: checkoutData.city || '',
+                paymentMethod: 'mercado_pago',
+                paymentRef: '',
+                items: normalized
+            };
+            const res = await fetch(`${API}/floret/orders`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudo registrar la orden');
+            sellerDashboardCache = null;
+            sellerOrdersCache = [];
+            return data;
+        }
+
+        // ========== PERFIL ==========
+        function openProfile() {
+            if (!user) return;
+            const createdDate = new Date(user.created_at || Date.now()).toLocaleDateString();
+
+            openModal(`
+                <div class="modal-hd"><h3><i class="fas fa-id-card"></i> Mi Perfil</h3><button class="modal-cl" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+                <div class="modal-bd">
+                    <div class="profile-header">
+                        <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                        <div class="profile-name">${user.username}</div>
+                        <div class="profile-email">${user.email || 'Sin email registrado'}</div>
+                        ${user.power_level > 0 ? `<div style="font-size:0.7rem;background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;display:inline-block;margin-top:5px">ADMIN LVL ${user.power_level} ${user.id}</div>` : ''}
+                    </div>
+                    
+                    <div class="profile-stats">
+                        <div class="profile-stat">
+                            <div class="profile-stat-value">${cart.length}</div>
+                            <div class="profile-stat-label">En Carrito</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="profile-stat-value">0</div>
+                            <div class="profile-stat-label">Pedidos</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="profile-stat-value">${createdDate.split('/')[2] || '2026'}</div>
+                            <div class="profile-stat-label">Miembro Desde</div>
+                        </div>
+                    </div>
+
+                    <div class="profile-menu">
+                        ${user.power_level === 2 ? `<button class="profile-menu-item" style="background:rgba(236,72,153,0.1);border-color:var(--pink);color:var(--pink)" onclick="openGrantQuota()"><i class="fas fa-gift"></i> Otorgar Cuota a Malevo</button>` : ''}
+                        ${isMalevoSession() ? `<button class="profile-menu-item" style="background:rgba(236,72,153,0.14);border-color:rgba(236,72,153,0.35);color:#ffc7eb" onclick="openMalevoNotifications()"><i class="fas fa-bell"></i> Notificaciones ${malevoUnreadCount > 0 ? `<span class="notif-badge">${malevoUnreadCount}</span>` : ''}</button>` : ''}
+                        ${isMalevoSession() ? `<button class="profile-menu-item" onclick="openSellerOperationsPanel()"><i class="fas fa-briefcase"></i> Panel de ventas</button>` : ''}
+                        ${isMalevoSession() ? `<button class="profile-menu-item" onclick="openMalevoReviewHub()"><i class="fas fa-layer-group"></i> Centro de Reviews</button>` : ''}
+                        <button class="profile-menu-item" onclick="openSellerReviewComposer()"><i class="fas fa-user-check"></i> Calificar a Malevo</button>
+                        <button class="profile-menu-item" onclick="openSellerReviewsPanel()"><i class="fas fa-star"></i> Reviews de vendedor</button>
+                        <button class="profile-menu-item"><i class="fas fa-history"></i> Historial de Pedidos</button>
+                        <button class="profile-menu-item"><i class="fas fa-cog"></i> Configuracion</button>
+                        <button class="profile-menu-item" onclick="window.open('https://wa.me/${WA_NUM1}', '_blank')"><i class="fab fa-whatsapp"></i> Soporte (+598 098 725 223)</button>
+                        <button class="profile-menu-item danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesion</button>
+                    </div>
+                </div>
+            `);
+        }
+        async function openGrantQuota() {
+            const targetId = prompt("ID de usuario (Malevo):", "1");
+            const amount = prompt("Cantidad de cuota a restaurar:", "1");
+            if (!targetId || !amount) return;
+
+            try {
+                const res = await fetch(`${API}/floret/grant-quota`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminId: user.id, targetUserId: parseInt(targetId), amount: parseInt(amount) })
+                });
+                const data = await res.json();
+                if (res.ok) showToast("¡Cuota otorgada con éxito!");
+                else showToast(data.error || "Error", true);
+            } catch (e) {
+                showToast("Error de conexión", true);
+            }
+        }
+        function logout() {
+            user = null;
+            isAdmin = false;
+            quota = null;
+            productReviewsCache = {};
+            sellerReviewsCache = null;
+            allReviewsCache = null;
+            malevoNotifications = [];
+            malevoUnreadCount = 0;
+            saveAuthUser(null, false);
+            closeModal();
+            render();
+            showToast('Sesion cerrada');
+        }
+
+        // ========== INIT ==========
+        window.onload = () => {
+            resizeCanvas();
+            initFlowers();
+            animateFlowers();
+            window.addEventListener('resize', () => { resizeCanvas(); initFlowers(); });
+
+            // Activar modo admin con tecla secreta (presiona 'A' 3 veces rápido)
+            let adminClicks = 0;
+            document.addEventListener('keydown', (e) => {
+                if (e.key?.toLowerCase() === 'a') {
+                    adminClicks++;
+                    setTimeout(() => adminClicks = 0, 1000);
+                    if (adminClicks >= 3) { isAdmin = !isAdmin; render(); showToast(isAdmin ? 'Modo Admin ON' : 'Modo Admin OFF'); }
+                }
+            });
+
+            loadProducts();
+            if (user && user.power_level === 1) loadQuota();
+            if (user && isMalevoSession()) {
+                loadMalevoNotifications(true)
+                    .then(() => render())
+                    .catch(() => null);
+            }
+
+            // Detectar retorno de pago exitoso MP
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('collection_status');
+            if (status === 'approved') {
+                showPaymentSuccess();
+                window.history.replaceState({}, document.title, window.location.pathname);
+                cart = [];
+                localStorage.setItem('floret_cart', JSON.stringify(cart));
+            }
+        };
+
+
+        async function showPaymentSuccess() {
+            // Intentar usar el carrito actual, o el backup si está vacío (fix del $0)
+            let finalCart = cart && cart.length > 0 ? cart : (JSON.parse(localStorage.getItem('floret_cart_backup')) || []);
+            if (finalCart.length) {
+                try {
+                    await registerPaidOrder(finalCart);
+                } catch (orderErr) {
+                    console.error('No se pudo registrar la orden Floret:', orderErr);
+                }
+            }
+
+            // Generar mensaje con el contenido del carrito
+            let msg = '🌸 *HOLA, REALICÉ EL PAGO EN FLORET SHOP* 🌸\n\n';
+            msg += 'He completado el pago vía Mercado Pago.\n\n';
+            msg += '📦 *PEDIDO:*\n';
+            finalCart.forEach(c => {
+                msg += `• ${c.name} - $${c.price.toLocaleString()}\n`;
+            });
+            let total = finalCart.reduce((sum, c) => sum + c.price, 0);
+            msg += `\n💰 *TOTAL ABONADO: $${total.toLocaleString()}*\n`;
+            msg += '\nTengo el comprobante de pago disponible para verificar.';
+
+            const encodedMsg = encodeURIComponent(msg);
+
+            // Limpiar backups ya usados
+            localStorage.removeItem('floret_cart_backup');
+
+            const overlay = document.createElement('div');
+            overlay.className = 'processing-overlay on';
+            // Eliminamos align-items manual para que CSS lo centre
+            overlay.innerHTML = `
+                <div style="background:var(--card); padding:30px; border-radius:16px; max-width:400px; width:90%; position:relative; display:flex; flex-direction:column; align-items:center; border:1px solid rgba(139,92,246,0.3); box-shadow:0 10px 40px rgba(0,0,0,0.5)">
+                    <div class="success-check" style="margin-bottom:16px; position:static"><i class="fas fa-check"></i></div>
+                    <h2 style="color:var(--txt);margin-bottom:10px;text-align:center">¡Pago Acreditado!</h2>
+                    
+                    <div style="background:rgba(255,193,7,0.1);border:1px solid #ffc107;padding:12px;border-radius:8px;margin-bottom:20px;text-align:left;width:100%">
+                        <p style="color:#ffc107;font-size:0.9rem;margin:0">
+                            <i class="fas fa-exclamation-triangle"></i> <strong>Importante:</strong><br>
+                            Para coordinar la entrega, contáctanos por WhatsApp. Es posible que te solicitemos el <strong>comprobante de Mercado Pago</strong> para verificar la acreditación final.
+                        </p>
+                    </div>
+
+                    <p style="color:var(--muted);margin-bottom:16px;text-align:center">Elige un contacto:</p>
+                    
+                    <div style="display:flex;flex-direction:column;gap:10px;width:100%">
+                        <button class="btn btn-p" style="background:#25D366;border:none;font-size:1rem;padding:12px;width:100%;display:flex;justify-content:center;align-items:center;gap:8px" 
+                                onclick="window.open('https://wa.me/${WA_NUM1}?text=${encodedMsg}', '_blank')">
+                            <i class="fab fa-whatsapp"></i> Chatea con +598 098 725 223
+                        </button>
+                        <button class="btn btn-p" style="background:#25D366;border:none;font-size:1rem;padding:12px;width:100%;display:flex;justify-content:center;align-items:center;gap:8px" 
+                                onclick="window.open('https://wa.me/${WA_NUM2}?text=${encodedMsg}', '_blank')">
+                            <i class="fab fa-whatsapp"></i> Chatea con +598 093 994 250
+                        </button>
+                    </div>
+
+                    <button class="btn btn-s" style="margin-top:20px;border:none;width:100%" onclick="document.querySelector('.processing-overlay').remove()">Cerrar</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+    </script>
+</body>
+
+</html>
+
+
+
+
+
+
