@@ -1596,6 +1596,26 @@
 
         // ========== CONFIG ==========
         const API = 'https://owsdatabase.onrender.com';
+        (function initOwsProjectGuard() {
+            const mountGuard = () => {
+                if (!window.OWSProjectRestrictionGuard || typeof window.OWSProjectRestrictionGuard.mount !== 'function') return;
+                window.OWSProjectRestrictionGuard.mount({
+                    apiBaseUrl: API,
+                    projectSlug: 'floretshop',
+                    projectName: 'Floret Shop',
+                    checkIntervalMs: 30000
+                });
+            };
+            if (window.OWSProjectRestrictionGuard) {
+                mountGuard();
+                return;
+            }
+            const s = document.createElement('script');
+            s.src = 'https://owsdatabase.onrender.com/shared/ows-project-guard.js';
+            s.async = true;
+            s.onload = mountGuard;
+            document.head.appendChild(s);
+        })();
         const WA_NUM1 = '59898725223'; // Ajustado sin el 0 extra si es internacional (+598 98...)
         const WA_NUM2 = '59893994250';
 
